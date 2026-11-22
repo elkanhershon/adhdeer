@@ -1,0 +1,13 @@
+{
+  "name": "adhdeer-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tiny self-hosted sync server for the ADHdeer planner app (no Google sign-in needed)",
+  "main": "adhdeer-server.js",
+  "scripts": {
+    "start": "node adhdeer-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

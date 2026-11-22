@@ -58,6 +58,7 @@ cd android && ./gradlew assembleDebug
 - The app registers `sw.js` and stores data in localStorage; inside the WebView that behaves as on disk and persists across launches.
 - The **Atkinson Hyperlegible font is bundled** (`fonts/*.woff2`) instead of loading from Google Fonts — the app is 100% offline, first launch included.
 - `CapacitorHttp` is enabled so the **home-storage (NAS) sync** works from inside the app — native HTTP bypasses WebView CORS restrictions that would otherwise block calls to your storage box.
+- **Accounts without Google:** Settings → My account signs in to your own self-hosted sync server (username + password, no Google). See [`server/README-server.md`](server/README-server.md) — one zero-dependency Node script (or Docker). Signing in enables cross-device sync plus an optional auto-mirror that quietly saves a few seconds after every change.
 
 ## Updating the app
 
