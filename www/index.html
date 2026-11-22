@@ -400,10 +400,18 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   .backdrop{padding:12px 10px}
   .dialog,.mini-dialog{max-height:88vh;overflow-y:auto}
   .toolbar{padding:10px 12px;gap:8px}
-  .toolbar .date{flex:0 0 100%;text-align:center;margin:0;order:-1}
+  .toolbar::after{content:"";flex-basis:100%;height:0;order:1}
+  #prevBtn{order:-3}
+  .toolbar .date{order:-2;flex:1 1 auto;margin:0;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #nextBtn{order:-1}
+  #todayBtn{order:2}
+  .view-switch{order:3}
+  .view-switch button{min-height:38px;padding:4px 9px;font-size:13px}
   #packWeekBtn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom) + 4px);z-index:36;box-shadow:var(--shadow)}
   .toast{bottom:calc(148px + env(safe-area-inset-bottom))}
-  .logo{height:38px}
+  .topbar{padding:8px 12px;gap:8px;flex-wrap:nowrap}
+  .topbar .icon-btn,.topbar .btn-quiet{min-height:40px;min-width:40px}
+  .logo{height:24px}
 }
 </style>
 </head>
