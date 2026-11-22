@@ -32,6 +32,13 @@ Every push to `main` runs [`.github/workflows/android.yml`](.github/workflows/an
 which builds a new debug APK and uploads it as a workflow artifact — check the
 **Actions** tab → latest run → **ADHdeer-debug-apk**.
 
+Tagging a commit (`git tag v1.1 && git push origin v1.1`) or running
+[`.github/workflows/release.yml`](.github/workflows/release.yml) manually produces a
+**Play-Store-ready signed release APK** if you've added the repo secrets
+(`RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
+`RELEASE_KEY_PASSWORD`) — otherwise it falls back to a debug build and attaches
+the APK to a GitHub Release.
+
 ## Build it yourself
 
 Prereqs: Node.js 22, JDK 21, Android SDK (platform 36, build-tools 36.0.0).
@@ -49,6 +56,7 @@ cd android && ./gradlew assembleDebug
 - `manifest.json` and `sw.js` (missing from the original upload) were added, so the same files work as an installable PWA if you ever host them.
 - Launcher icons and splash screens were generated from `vector.png` (the 450×450 deer) — the wide `logo.png` banner stays as the in-app header logo.
 - The app registers `sw.js` and stores data in localStorage; inside the WebView that behaves as on disk and persists across launches.
+- The **Atkinson Hyperlegible font is bundled** (`fonts/*.woff2`) instead of loading from Google Fonts — the app is 100% offline, first launch included.
 - `CapacitorHttp` is enabled so the **home-storage (NAS) sync** works from inside the app — native HTTP bypasses WebView CORS restrictions that would otherwise block calls to your storage box.
 
 ## Updating the app
@@ -57,3 +65,7 @@ cd android && ./gradlew assembleDebug
 2. Copy it over `www/index.html` (or just run `npx cap sync android` after replacing `www/`).
 3. Bump `versionCode` / `versionName` in `android/app/build.gradle`.
 4. Rebuild.
+
+> **Note on updates between build types:** Android refuses to install an update signed with a
+> different key. If you first installed a *debug* APK and later build a *release-signed* one,
+> you must uninstall first — export a backup from **Settings → Download data** before doing so.

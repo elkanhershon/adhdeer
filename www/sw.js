@@ -1,5 +1,7 @@
-const CACHE = "adhdeer-v1";
-const SHELL = ["./", "./index.html", "./logo.png", "./vector.png", "./manifest.json", "./icons/icon-512.png"];
+const CACHE = "adhdeer-v2";
+const SHELL = ["./", "./index.html", "./logo.png", "./vector.png", "./manifest.json", "./icons/icon-512.png",
+  "./fonts/atkinson-hyperlegible-latin-400-normal.woff2",
+  "./fonts/atkinson-hyperlegible-latin-700-normal.woff2"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))));
