@@ -127,7 +127,6 @@ img{max-width:100%}
 .brand{display:flex;align-items:flex-end;gap:10px;margin-right:auto}
 .brand h1{display:flex;align-items:center;margin:0;font-size:22px}
 .logo{height:28px;width:auto;display:block}
-.brand span{color:var(--accent-ink);opacity:.75;font-size:15px;line-height:1;transform:translateY(2px)}
 .topbar .icon-btn{background:transparent;border-color:var(--accent-ink)}
 .topbar .btn-quiet{background:transparent;border-color:var(--accent-ink);color:var(--accent-ink)}
 .topbar .btn-quiet:hover{border-color:var(--accent-ink);filter:brightness(1.15)}
@@ -396,9 +395,15 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   body.mobile-tab-add .sidebar{display:flex}
   body.mobile-tab-add .cal{display:none}
   body.mobile-tab-add .side-scroll{display:none}
+  body.mobile-tab-list #addCard{display:none}
+  body.mobile-tab-list div.help{display:none}
   .backdrop{padding:12px 10px}
   .dialog,.mini-dialog{max-height:88vh;overflow-y:auto}
-  .logo{height:32px}
+  .toolbar{padding:10px 12px;gap:8px}
+  .toolbar .date{flex:0 0 100%;text-align:center;margin:0;order:-1}
+  #packWeekBtn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom) + 4px);z-index:36;box-shadow:var(--shadow)}
+  .toast{bottom:calc(148px + env(safe-area-inset-bottom))}
+  .logo{height:38px}
 }
 </style>
 </head>
@@ -427,7 +432,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 <header class="topbar container">
   <div class="brand">
     <h1><img src="logo.png" alt="ADHdeer" class="logo"></h1>
-    <span>make your daunting tasks seem highly doe-able</span>
   </div>
   <button class="icon-btn" id="themeBtn" aria-label="Switch between light and dark colours" title="Switch light / dark"><svg class="ic"><use href="#i-moon"/></svg></button>
   <button class="icon-btn" id="toolsBtn" aria-haspopup="menu" aria-label="Open the settings menu" title="Settings"><svg class="ic"><use href="#i-sliders"/></svg></button>
@@ -1503,6 +1507,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     }
     if (item.important) { /* star shown in list */ }
     $("addBtn").textContent = "Save changes";
+    if (document.body.classList.contains("mobile-tab-list")) setMobileTabSafe("add");
     $("taskTitle").focus();
   }
 
@@ -1556,9 +1561,11 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
 
   function cancelEdit() {
+    const wasEditing = editId != null || editGroupId != null;
     editId = null; editKey = null; editGroupId = null;
     clearForm();
     applyEntryType();
+    if (wasEditing && document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
   }
 
   /* Step-group popups (simplified, no floating bubble) */
