@@ -49,6 +49,7 @@ cd android && ./gradlew assembleDebug
 - `manifest.json` and `sw.js` (missing from the original upload) were added, so the same files work as an installable PWA if you ever host them.
 - Launcher icons and splash screens were generated from `vector.png` (the 450×450 deer) — the wide `logo.png` banner stays as the in-app header logo.
 - The app registers `sw.js` and stores data in localStorage; inside the WebView that behaves as on disk and persists across launches.
+- `CapacitorHttp` is enabled so the **home-storage (NAS) sync** works from inside the app — native HTTP bypasses WebView CORS restrictions that would otherwise block calls to your storage box.
 
 ## Updating the app
 
