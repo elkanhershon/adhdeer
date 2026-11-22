@@ -239,6 +239,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   background:var(--bg);font-weight:700;
 }
 .view-switch button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tb-tools{display:contents}
 .cal-outer{flex:1;overflow:auto;min-height:0;padding:8px 16px}
 .hour-head,.cal-head-days{display:grid;grid-template-columns:64px 1fr}
 .wk-heads,.wk-body{display:grid;grid-template-columns:64px repeat(7,1fr)}
@@ -399,13 +400,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   body.mobile-tab-list div.help{display:none}
   .backdrop{padding:12px 10px}
   .dialog,.mini-dialog{max-height:88vh;overflow-y:auto}
-  .toolbar{padding:10px 12px;gap:8px}
-  .toolbar::after{content:"";flex-basis:100%;height:0;order:1}
-  #prevBtn{order:-3}
-  .toolbar .date{order:-2;flex:1 1 auto;margin:0;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #nextBtn{order:-1}
-  #todayBtn{order:2}
-  .view-switch{order:3}
+  .toolbar{padding:8px 12px;gap:6px}
+  .toolbar .date{flex:1;margin:0;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+  .tb-tools{display:flex;flex:0 0 100%;gap:8px;align-items:center}
   .view-switch button{min-height:38px;padding:4px 9px;font-size:13px}
   #packWeekBtn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom) + 4px);z-index:36;box-shadow:var(--shadow)}
   .toast{bottom:calc(148px + env(safe-area-inset-bottom))}
@@ -610,12 +607,14 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       <button class="icon-btn" id="prevBtn" aria-label="Earlier"><svg class="ic"><use href="#i-chev-left"/></svg></button>
       <span class="date" id="dateLabel" aria-live="polite"></span>
       <button class="icon-btn" id="nextBtn" aria-label="Later"><svg class="ic"><use href="#i-chev-right"/></svg></button>
-      <button class="btn-quiet" id="todayBtn">Today</button>
-      <div class="view-switch" role="radiogroup" aria-label="Calendar view">
-        <button id="vDay" class="active" aria-pressed="true">Day</button>
-        <button id="vWeek" aria-pressed="false">Week</button>
-        <button id="vMonth" aria-pressed="false">Month</button>
-      </div>
+        <div class="tb-tools">
+          <button class="btn-quiet" id="todayBtn">Today</button>
+          <div class="view-switch" role="radiogroup" aria-label="Calendar view">
+            <button id="vDay" class="active" aria-pressed="true">Day</button>
+            <button id="vWeek" aria-pressed="false">Week</button>
+            <button id="vMonth" aria-pressed="false">Month</button>
+          </div>
+        </div>
       <button class="btn-quiet" id="packWeekBtn">Fill this week</button>
     </div>
     <div class="cal-outer" id="calOuter">
@@ -672,18 +671,21 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       <button id="importBtn" class="set-item">
         <span class="set-txt"><span class="set-title">Load a backup file</span><span class="set-sub">brings a saved copy back</span></span>
       </button>
-      <button id="nasCfgBtn" class="set-item">
-        <span class="set-txt"><span class="set-title">Set up my home storage (NAS)</span><span class="set-sub">do this once, then save &amp; load between devices</span></span>
+    </div>
+
+    <h3 class="set-head">Reminders</h3>
+    <div class="opts">
+      <button id="notifMasterBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Remind me</span><span class="set-sub">a nudge when something you've added is due or starting</span></span>
+        <span class="set-val" id="notifMasterLbl"></span>
       </button>
-      <button id="nasUpBtn" class="set-item">
-        <span class="set-txt"><span class="set-title">Save to my home storage</span><span class="set-sub">uploads this device's planner</span></span>
+      <button id="notifAllBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Everything in my planner</span><span class="set-sub">also nudges about items that arrived from elsewhere</span></span>
+        <span class="set-val" id="notifAllLbl"></span>
       </button>
-      <button id="nasDownBtn" class="set-item">
-        <span class="set-txt"><span class="set-title">Load from my home storage</span><span class="set-sub">brings the latest copy onto this device</span></span>
-      </button>
-      <button id="nasAutoBtn" class="set-item">
-        <span class="set-txt"><span class="set-title">Mirror my changes automatically</span><span class="set-sub">quietly saves to my home storage after I change anything</span></span>
-        <span class="set-val" id="nasAutoLbl"></span>
+      <button id="notifKindsBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Which kinds?</span><span class="set-sub">to-dos, events, deadlines and habits</span></span>
+        <span class="set-val" id="notifKindsLbl"></span>
       </button>
     </div>
 
@@ -818,13 +820,12 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   function savePool() { localStorage.setItem("plannerWeekPool", JSON.stringify(weekPool)); stampEdit(); refreshStaleInfo(); scheduleAutoSync(); }
 
   /* Auto-mirror: home storage quietly receives each change a few seconds later */
-  let nasAutoTimer = null;
+  let acctSyncTimer = null;
   function scheduleAutoSync() {
-    const nasOn = localStorage.getItem("plannerNasAutoSync") === "on";
-    const acctOn = acctSignedIn() && localStorage.getItem("plannerAutoSync") !== "off";
-    if (!nasOn && !acctOn) return;
-    clearTimeout(nasAutoTimer);
-    nasAutoTimer = setTimeout(() => { if (nasOn) nasUpload(true); if (acctOn) acctUpload(true); }, 3000);
+    if (!acctSignedIn() || localStorage.getItem("plannerAutoSync") === "off") return;
+    clearTimeout(acctSyncTimer);
+    acctSyncTimer = setTimeout(() => acctUpload(true), 3000);
+    scheduleAllUpcoming();
   }
 
   let state = load();
@@ -1037,10 +1038,10 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       if (start < DAY_START || start + duration > DAY_END) { toast("That's outside the hours your calendar shows ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+"). Widen them in Settings.", true); return; }
       if (overlaps(items(), start, start+duration)) { toast("That time is already taken by something else.", true); return; }
       if (isEvent) {
-        items().push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details });
+        items().push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details, mine:true });
         toast("Event added: \""+title+"\" at "+fmtTime(start)+".");
       } else {
-        items().push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details });
+        items().push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details, mine:true });
         toast("Fixed in place: \""+title+"\" at "+fmtTime(start)+".");
       }
     } else {
@@ -1048,7 +1049,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       const from = Math.max(wf, slotFloor(currentDate));
       const slot = findFreeSlot(items(), duration, from, wt);
       if (slot == null) { toast("I couldn't find a free "+fmtDur(duration)+" gap between "+fmtTime(from)+" and "+fmtTime(wt)+". Try changing the hours under More options, or set a start time yourself.", true); return; }
-      items().push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt });
+      items().push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true });
       toast("\""+title+"\" slotted in at "+fmtTime(slot)+".");
     }
     clearForm(); save(); render();
@@ -1065,7 +1066,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     if (!title) { toast("Type the to-do first.", true); return; }
     const duration = readDur();
     const [wf, wt] = currentWindowChoice();
-    weekPool.push({ id:uid(), title, duration, priority:"normal", important:false, done:false, kind:"task", parent:null, slotFrom:wf, slotTo:wt });
+    weekPool.push({ id:uid(), title, duration, priority:"normal", important:false, done:false, kind:"task", parent:null, slotFrom:wf, slotTo:wt, mine:true });
     clearForm(); savePool(); render();
     toast("\""+title+"\" is waiting for later this week — press Fill this week when you're ready.");
   }
@@ -1080,7 +1081,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     if (date < dateKey(new Date())) { toast("That day has already passed.", true); return null; }
     const dueTime = toMin(timeStr);
     const [dwf, dwt] = currentWindowChoice();
-    const item = { id:uid(), title, kind:"deadline", dueDate:date, dueTime, done:false, important:false, parent:null, slotFrom:dwf, slotTo:dwt };
+    const item = { id:uid(), title, kind:"deadline", dueDate:date, dueTime, done:false, important:false, parent:null, slotFrom:dwf, slotTo:dwt, mine:true };
     itemsFor(date).push(item);
     clearForm(); save(); render();
     if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
@@ -1122,7 +1123,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       itemsFor(placed.key).push({
         id:uid(), title:"["+(idx+1)+"/"+steps.length+"] "+modalCtx.title+": "+s.text,
         duration:s.minutes, time:placed.time, kind:"task", done:false, important:false,
-        parent:modalCtx.parentId, stepText:s.text, stepIdx:idx, slotFrom:wf, slotTo:wt,
+        parent:modalCtx.parentId, stepText:s.text, stepIdx:idx, slotFrom:wf, slotTo:wt, mine:true,
       });
       return placed;
     });
@@ -1200,7 +1201,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         const list = itemsFor(key);
         if (list.some(i => i.kind==="habit" && i.habitId===h.id)) continue;
         const time = h.timeMode==="fixed" ? h.time : findFreeSlot(list, h.duration, slotFloor(key));
-        list.push({ id:uid(), title:h.title, duration:h.duration, time, kind:"habit", habitId:h.id, done:false, important:false, parent:null });
+        list.push({ id:uid(), title:h.title, duration:h.duration, time, kind:"habit", habitId:h.id, done:false, important:false, parent:null, mine:h.mine === true });
         changed = true;
       }
       key = dateKey(addDays(parseDate(key), 1));
@@ -1236,7 +1237,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       time = toMin(t);
       if (time < DAY_START || time + duration > DAY_END) { toast("That time is outside your calendar hours ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+").", true); return; }
     }
-    const h = { id:uid(), title, days, timeMode, time, duration, createdAt:dateKey(new Date()) };
+    const h = { id:uid(), title, days, timeMode, time, duration, createdAt:dateKey(new Date()), mine:true };
     habits.push(h); saveHabits();
     clearForm(); syncHabitRange(); save(); render();
     if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
@@ -1251,6 +1252,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     if (!occ) { ensureHabitOccurrences(k, k); occ = findHabitOcc(habitId, k); }
     if (!occ) { toast("That habit isn't planned for "+fmtDay(k)+".", true); return; }
     occ.done = !occ.done;
+    if (occ.done) cancelItemNotifs(occ.id, k);
     save(); render();
     const when = k === dateKey(new Date()) ? "today" : "on "+fmtDay(k);
     toast(occ.done ? "Done — \""+h.title+"\" ticked off "+when+"." : "\""+h.title+"\" unticked "+when+".");
@@ -1272,6 +1274,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     const remaining = victim && victim.parent
       ? Object.keys(state).reduce((n,k) => n + (state[k]||[]).filter(x => x.parent===victim.parent).length, 0) - 1 : 0;
     state[key] = (state[key]||[]).filter(x => x.id !== id);
+    cancelItemNotifs(id, key);
     save(); render();
     toast("Removed \""+(title||"this")+"\"."+ (remaining > 0 ? " "+remaining+" step(s) of it are still in your plan." : ""));
   }
@@ -1280,12 +1283,18 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     const target = list.find(x => x.id === id);
     if (!target) return;
     const groupId = target.parent ? target.parent : id;
+    const doomed = new Set([id, groupId]);
     Object.keys(state).forEach(k => { state[k] = (state[k]||[]).filter(x => x.id !== groupId && x.parent !== groupId && x.id !== id); });
+    Object.keys(state).forEach(k => { state[k].forEach(x => { if (x.parent && doomed.has(x.id)) doomed.add(x.id); }); });
+    cancelItemNotifs(id); cancelItemNotifs(groupId);
     save(); render();
   }
   function removeWholeGroup(groupId) {
     let n = 0;
+    const killRefs = [];
+    Object.keys(state).forEach(k => { (state[k]||[]).forEach(x => { if (x.parent === groupId || x.id === groupId) killRefs.push([x.id, k]); }); });
     Object.keys(state).forEach(k => { const before = (state[k]||[]).length; state[k] = (state[k]||[]).filter(x => x.parent !== groupId && x.id !== groupId); n += before - state[k].length; });
+    killRefs.forEach(([i, k]) => cancelItemNotifs(i, k));
     save(); render();
     toast("Removed all "+n+" steps.");
   }
@@ -1330,7 +1339,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         const slot = findFreeSlot(itemsFor(key), t.duration, Math.max(pf, slotFloor(key)), pt);
         if (slot != null) {
           itemsFor(key).push({ id:t.id, title:t.title, duration:t.duration, time:slot,
-            kind:"task", done:false, important:t.important, priority:t.priority, parent:null, slotFrom:pf, slotTo:pt });
+            kind:"task", done:false, important:t.important, priority:t.priority, parent:null, slotFrom:pf, slotTo:pt, mine:t.mine === true });
           placedIds.add(t.id);
           break;
         }
@@ -1486,7 +1495,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       const slot = findFreeSlot(items(), r.minutes, Math.max(bwf, slotFloor(currentDate)), bwt);
       if (slot == null) unscheduled++;
       items().push({ id: uid(), title: "[" + (idx+1) + "/" + rows.length + "] " + modalCtx.title + ": " + r.text,
-        duration: r.minutes, time: slot, kind: "task", done: false, important: false, parent: parentRef, stepText: r.text, stepIdx: idx });
+        duration: r.minutes, time: slot, kind: "task", done: false, important: false, parent: parentRef, stepText: r.text, stepIdx: idx, mine: true });
     });
     save(); render();
     $("modalBackdrop").classList.remove("open");
@@ -1520,6 +1529,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
 
   function saveEdit() {
+    if (editGroupId) planStepsFor(editGroupId).forEach(s => cancelItemNotifs(s.item.id, s.key));
+    else if (editId) cancelItemNotifs(editId, editKey);
     const list = state[editKey] || [];
     const item = list.find(x => x.id === editId);
     if (!item) { cancelEdit(); return; }
@@ -2098,8 +2109,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       const s = JSON.parse(localStorage.getItem("plannerLastEdit"));
       if (s && s.at) txt = "Last change: " + fmtWhen(s.at) + " on " + esc(s.device || "this device");
     } catch {}
-    const nasAt = localStorage.getItem("plannerNasSavedAt");
-    if (nasAt) txt += " · Home-storage copy saved " + esc(fmtWhen(nasAt));
+    const acctAt = localStorage.getItem("plannerAcctSavedAt");
+    if (acctAt) txt += " · My-account copy saved " + esc(fmtWhen(acctAt));
     el.textContent = txt;
   }
 
@@ -2306,64 +2317,203 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     inp.click();
   };
 
-  /* Home storage (NAS) sync — same WebDAV setup as before */
-  const nasUrlKey = "plannerNasUrl", nasUserKey = "plannerNasUser", nasAuthKey = "plannerNasAuth";
-  $("nasCfgBtn").onclick = () => {
-    const url = prompt("The web address of your storage box:", localStorage.getItem(nasUrlKey) || "https://ugreen-nas.tail1407e7.ts.net/adhdeer/ad-deer.json");
-    if (url === null) return;
-    localStorage.setItem(nasUrlKey, url.trim());
-    const user = prompt("Your username there:", localStorage.getItem(nasUserKey) || "");
-    if (user === null) return;
-    localStorage.setItem(nasUserKey, user);
-    const pass = prompt("Your password there (kept on this device only):", "");
-    if (pass === null) return;
-    localStorage.setItem(nasAuthKey, "Basic " + btoa(user + ":" + pass));
-    toast("Home storage set up.");
-  };
-  async function nasUpload(silent) {
-    const url = localStorage.getItem(nasUrlKey);
-    if (!url) { if (!silent) toast("Set up your home storage in Settings first.", true); return; }
-    try {
-      const r = await fetch(url, { method: "PUT", headers: { "Authorization": localStorage.getItem(nasAuthKey) || "" },
-        body: JSON.stringify({ planner: localStorage.getItem("plannerState"),
-                               habits: localStorage.getItem("plannerHabits"),
-                               theme: localStorage.getItem("plannerTheme"),
-                               savedAt: new Date().toISOString() }) });
-      if (!r.ok) throw new Error(r.status);
-      localStorage.setItem("plannerNasSavedAt", new Date().toISOString());
-      refreshStaleInfo();
-      if (!silent) toast("Saved to your home storage.");
-    } catch (e) { if (!silent) toast("Saving to your home storage failed (" + e.message + "). Check the address and login.", true); }
+  /* ================= REMINDERS =================
+     A nudge when something is due or starting. On the phone this uses
+     Capacitor's LocalNotifications (works after restarting too); in a
+     browser it falls back to plain Notifications + timers. */
+  function notifNative() {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+      && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
   }
-  function refreshNasAutoLbl() { $("nasAutoLbl").textContent = localStorage.getItem("plannerNasAutoSync") === "on" ? "on" : "off"; }
-  $("nasUpBtn").onclick = () => nasUpload(false);
-  $("nasAutoBtn").onclick = () => {
-    const on = localStorage.getItem("plannerNasAutoSync") === "on";
-    if (!on && !localStorage.getItem(nasUrlKey)) { toast("Set up my home storage first \u2014 that\u2019s where the copy goes.", true); return; }
-    localStorage.setItem("plannerNasAutoSync", on ? "off" : "on");
-    refreshNasAutoLbl();
-    toast(on ? "Auto-mirror switched off." : "Auto-mirror on \u2014 each change quietly lands in your home storage.");
-  };
-  $("nasDownBtn").onclick = async () => {
-    const url = localStorage.getItem(nasUrlKey);
-    if (!url) { toast("Set up your home storage in Settings first.", true); return; }
-    if (!confirm("Load the latest copy from your home storage? This replaces what's on this device.")) return;
+  function notifOn() { return localStorage.getItem("plannerNotif") === "on"; }
+  function readNotifCats() {
+    const all = { task: true, event: true, deadline: true, habit: true };
     try {
-      const r = await fetch(url, { headers: { "Authorization": localStorage.getItem(nasAuthKey) || "" } });
-      if (r.status === 404) { toast("There's nothing saved there yet — save something first.", true); return; }
-      if (!r.ok) throw new Error(r.status);
-      const data = await r.json();
-      if (!data.planner) { toast("That file isn't an AD-Deer backup.", true); return; }
-      if (data.savedAt) localStorage.setItem("plannerNasSavedAt", data.savedAt);
-      localStorage.setItem("plannerState", data.planner);
-      if (data.habits) localStorage.setItem("plannerHabits", data.habits);
-      if (data.theme) localStorage.setItem("plannerTheme", data.theme);
-      state = load(); habits = loadHabits(); weekPool = loadPool();
-      applySavedTheme();
-      save(); saveHabits(); render();
-      refreshStaleInfo();
-      toast("Loaded from your home storage (last saved " + (data.savedAt ? fmtWhen(data.savedAt) : "?") + ").");
-    } catch (e) { toast("Loading from your home storage failed (" + e.message + ").", true); }
+      const c = JSON.parse(localStorage.getItem("plannerNotifCats"));
+      if (c && typeof c === "object") for (const k in all) if (k in c) all[k] = !!c[k];
+    } catch (e) {}
+    return all;
+  }
+  function schedMapRead() {
+    try {
+      const m = JSON.parse(localStorage.getItem("plannerNotifSched"));
+      if (m && typeof m === "object") return m;
+    } catch (e) {}
+    return {};
+  }
+  function schedMapWrite(m) { localStorage.setItem("plannerNotifSched", JSON.stringify(m)); }
+  let notifTimers = {};
+  function notifNextId() {
+    let n = parseInt(localStorage.getItem("plannerNotifId") || "0", 10) || 0;
+    n = (n % 999999) + 1;
+    localStorage.setItem("plannerNotifId", String(n));
+    return n;
+  }
+  function notifDoSend(id, title, body) {
+    if (notifNative()) {
+      window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: [{ id, title, body }] }).catch(() => {});
+      return;
+    }
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    try { new Notification(title, { body }); } catch (e) {}
+  }
+  function notifDoSchedule(id, at, title, body) {
+    if (notifNative()) {
+      window.Capacitor.Plugins.LocalNotifications.schedule({ notifications: [{ id, title, body, schedule: { at: new Date(at) } }] }).catch(() => {});
+      return;
+    }
+    const delay = at - Date.now();
+    if (delay <= 0) return;
+    notifTimers[id] = setTimeout(() => notifDoSend(id, title, body), Math.min(delay, 2147483000));
+  }
+  function notifCancel(ids) {
+    if (notifNative()) {
+      window.Capacitor.Plugins.LocalNotifications.cancel({ notifications: ids.map(id => ({ id })) }).catch(() => {});
+    }
+    for (const id of ids) clearTimeout(notifTimers[id]);
+  }
+  async function notifRequestPermission() {
+    if (notifNative()) {
+      try {
+        const r = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+        return !!(r && (r.display === "granted" || r.displayNotifications === "granted"));
+      } catch (e) { return false; }
+    }
+    if (!("Notification" in window)) return false;
+    const r = await Notification.requestPermission();
+    return r === "granted";
+  }
+  function kindOf(i) {
+    if (isDeadline(i)) return "deadline";
+    if (i.kind === "habit") return "habit";
+    if (i.kind === "event") return "event";
+    return "task";
+  }
+  function itemByRef(ref) {
+    const at = ref.split("@");
+    const list = state[at[1]];
+    if (!Array.isArray(list)) return null;
+    return list.find(x => x.id === at[0]) || null;
+  }
+  function scheduleItem(item, key) {
+    if (!notifOn() || item.done) return;
+    if (!(item.mine || localStorage.getItem("plannerNotifAll") === "on")) return;
+    if (!readNotifCats()[kindOf(item)]) return;
+    let at = null, whenTxt = "";
+    if (isDeadline(item)) {
+      if (item.dueDate && item.dueTime != null) { at = parseDate(item.dueDate).getTime() + item.dueTime * 60000; whenTxt = fmtTime(item.dueTime); }
+    } else if (item.time != null) {
+      at = parseDate(key).getTime() + item.time * 60000;
+      whenTxt = fmtTime(item.time);
+    } else return;
+    if (!at || at < Date.now() + 60000 || at > Date.now() + 7 * 24 * 3600 * 1000) return;
+    const ref = item.id + "@" + key;
+    const map = schedMapRead();
+    for (const id in map) if (map[id].for === ref && Math.abs(map[id].at - at) < 60000) return;
+    for (const id in map) if (map[id].at < Date.now() - 24 * 3600 * 1000) delete map[id];
+    const id = notifNextId();
+    map[id] = { for: ref, at };
+    schedMapWrite(map);
+    const title = { task: "To-do time", event: "Event starting", deadline: "Deadline due", habit: "Habit time" }[kindOf(item)];
+    notifDoSchedule(id, at, title, item.title + (whenTxt ? "\u2014 " + whenTxt : ""));
+  }
+  function cancelItemNotifs(itemId, key) {
+    const map = schedMapRead();
+    const kill = [];
+    for (const id in map) {
+      const c = map[id].for.split("@");
+      if (key ? (c[0] === itemId && c[1] === key) : (c[0] === itemId)) kill.push(+id);
+    }
+    if (!kill.length) return;
+    for (const id of kill) delete map[id];
+    schedMapWrite(map);
+    notifCancel(kill);
+  }
+  function scheduleAllUpcoming() {
+    if (!notifOn()) return;
+    const today = dateKey(new Date());
+    const last = dateKey(addDays(new Date(), 7));
+    for (const k in state) {
+      if (k < today || k > last) continue;
+      const list = state[k];
+      if (!Array.isArray(list)) continue;
+      list.forEach(i => scheduleItem(i, k));
+    }
+  }
+  function notifKindLbl() {
+    const c = readNotifCats(), names = [];
+    if (c.task) names.push("to-dos");
+    if (c.event) names.push("events");
+    if (c.deadline) names.push("deadlines");
+    if (c.habit) names.push("habits");
+    return names.length ? names.join(", ") : "none";
+  }
+  function refreshNotifLbls() {
+    $("notifMasterLbl").textContent = notifOn() ? "on" : "off";
+    $("notifAllLbl").textContent = localStorage.getItem("plannerNotifAll") === "on" ? "on" : "off";
+    $("notifKindsLbl").textContent = notifOn() ? notifKindLbl() : "";
+  }
+  $("notifMasterBtn").onclick = async () => {
+    if (notifOn()) {
+      localStorage.setItem("plannerNotif", "off");
+      localStorage.setItem("plannerDailySummary", "off");
+      const map = schedMapRead();
+      schedMapWrite({});
+      notifCancel(Object.keys(map).map(Number));
+      refreshNotifLbls();
+      toast("Reminders switched off.");
+      return;
+    }
+    const ok = await notifRequestPermission();
+    if (!ok) { toast("The phone didn't allow notifications \u2014 allow them for ADHdeer in your settings, then try again.", true); return; }
+    localStorage.setItem("plannerNotif", "on");
+    localStorage.setItem("plannerDailySummary", "on");
+    localStorage.removeItem("plannerLastSummary");
+    refreshNotifLbls();
+    scheduleAllUpcoming();
+    maybeDailySummary();
+    toast("Reminders on \u2014 you'll get a nudge when something you've added is due or starting.");
+  };
+  $("notifAllBtn").onclick = () => {
+    if (!notifOn()) { toast("Turn Reminders on first.", true); return; }
+    const on = localStorage.getItem("plannerNotifAll") === "on";
+    localStorage.setItem("plannerNotifAll", on ? "off" : "on");
+    if (!on) {
+      scheduleAllUpcoming();
+    } else {
+      const map = schedMapRead();
+      const kill = [];
+      for (const id in map) {
+        const it = itemByRef(map[id].for);
+        if (!it || !it.mine) kill.push(+id);
+      }
+      for (const id of kill) delete map[id];
+      schedMapWrite(map);
+      notifCancel(kill);
+    }
+    refreshNotifLbls();
+    toast(on ? "I'll only nudge you about things you add here." : "I'll nudge you about everything in your planner.");
+  };
+  $("notifKindsBtn").onclick = () => {
+    if (!notifOn()) { toast("Turn Reminders on first.", true); return; }
+    const cur = readNotifCats();
+    const list = [["task", "to-dos"], ["event", "events"], ["deadline", "deadlines"], ["habit", "habits"]];
+    for (const [k, lbl] of list) {
+      cur[k] = confirm("Reminders about " + lbl + "?\n\nOK = yes\\nCancel = no\n\n(Currently " + (cur[k] ? "on" : "off") + ".)");
+    }
+    localStorage.setItem("plannerNotifCats", JSON.stringify(cur));
+    const map = schedMapRead();
+    const kill = [];
+    for (const id in map) {
+      const it = itemByRef(map[id].for);
+      if (!it || !readNotifCats()[kindOf(it)]) kill.push(+id);
+    }
+    for (const id of kill) delete map[id];
+    schedMapWrite(map);
+    notifCancel(kill);
+    scheduleAllUpcoming();
+    refreshNotifLbls();
+    toast("Reminder kinds saved.");
   };
 
   /* My account \u2014 a plain sign-in on your own sync server. No Google needed. */
@@ -2581,11 +2731,12 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   /* Go */
   applyEntryType();
   refreshSettingsLabels();
-  refreshNasAutoLbl();
+  refreshNotifLbls();
   refreshAcctLbl();
   refreshStaleInfo();
   setViewButtons();
   render();
+  scheduleAllUpcoming();
   if (navigator.serviceWorker) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 </script>
