@@ -1,4 +1,4 @@
-const CACHE = "adhdeer-v2";
+const CACHE = "adhdeer-v3";
 const SHELL = ["./", "./index.html", "./logo.png", "./vector.png", "./manifest.json", "./icons/icon-512.png",
   "./fonts/atkinson-hyperlegible-latin-400-normal.woff2",
   "./fonts/atkinson-hyperlegible-latin-700-normal.woff2"];
