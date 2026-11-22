@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ADHdeer</title>
+<link rel="manifest" href="manifest.json">
+<style>
+@font-face{
+  font-family:'Atkinson Hyperlegible';
+  font-style:normal; font-weight:400; font-display:swap;
+  src:url("fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");
+}
+@font-face{
+  font-family:'Atkinson Hyperlegible';
+  font-style:normal; font-weight:700; font-display:swap;
+  src:url("fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2");
+}
+</style>
+<style>
+/* ================= THEME =================
+   Light by nature, dark by device preference,
+   manual switch wins. Colours are soft but
+   pass contrast checks; text never below 15px. */
+:root{
+  color-scheme:light;
+  --bg:#f7f4ee; --card:#fffdf8; --ink:#243039; --soft:#4d5a64;
+  --line:#d9d1c3; --accent:#5d7f9b; --accent-ink:#ffffff;
+  --task-bg:#dfe9f5; --task-edge:#2f5d92;
+  --evt-bg:#dcefe0; --evt-edge:#2f6b47;
+  --dl-bg:#f8e3d8;  --dl-edge:#a5502b;
+  --hab-bg:#e8e2f6; --hab-edge:#5b4a99;
+  --warn:#a5502b; --shadow:0 2px 10px rgba(40,50,60,.10);
+  --grid:#cbc1b0;
+}
+html.dark{
+  color-scheme:dark;
+  --bg:#15191d; --card:#1e242b; --ink:#e8edf2; --soft:#a6b5c1;
+  --line:#2d3640; --accent:#8fa9c2; --accent-ink:#10161c;
+  --task-bg:#203648; --task-edge:#8fb8e6;
+  --evt-bg:#1c3426; --evt-edge:#8fd0a8;
+  --dl-bg:#3a2721;  --dl-edge:#f0a884;
+  --hab-bg:#2c2450; --hab-edge:#c4b2f0;
+  --warn:#f0a884; --shadow:0 2px 10px rgba(0,0,0,.35);
+  --grid:#3a444f;
+  .type-switch button[data-type="deadline"].active,.type-switch button[data-type="habit"].active{color:#10161c}
+}
+@media (prefers-color-scheme: dark){
+  html:not(.light){
+    color-scheme:dark;
+    --bg:#15191d; --card:#1e242b; --ink:#e8edf2; --soft:#a6b5c1;
+    --line:#2d3640; --accent:#8fa9c2; --accent-ink:#10161c;
+    --task-bg:#203648; --task-edge:#8fb8e6;
+    --evt-bg:#1c3426; --evt-edge:#8fd0a8;
+    --dl-bg:#3a2721;  --dl-edge:#f0a884;
+    --hab-bg:#2c2450; --hab-edge:#c4b2f0;
+    --warn:#f0a884; --shadow:0 2px 10px rgba(0,0,0,.35);
+    --grid:#3a444f;
+  }
+}
+
+/* ================= BASE ================= */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Atkinson Hyperlegible',Verdana,Tahoma,sans-serif;
+  font-size:17px; line-height:1.55; color:var(--ink); background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink)}
+img{max-width:100%}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Everyone can see where they are */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+::selection{background:var(--accent);color:var(--accent-ink)}
+
+/* Reduced motion respected */
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
+}
+
+/* ================= BUTTONS ================= */
+.btn{
+  min-height:44px; padding:8px 16px; border-radius:12px;
+  background:var(--accent); color:var(--accent-ink);
+  font-weight:700; border:2px solid transparent;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn:hover{filter:brightness(1.06)}
+.btn-quiet{
+  min-height:44px; padding:8px 14px; border-radius:12px;
+  background:var(--card); color:var(--ink);
+  border:2px solid var(--line); font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-quiet:hover{border-color:var(--accent)}
+.btn-quiet[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.icon-btn{
+  min-width:44px;min-height:44px;border-radius:12px;border:2px solid var(--line);
+  background:var(--card);display:inline-flex;align-items:center;justify-content:center;
+  font-weight:700;
+}
+.icon-btn:hover{border-color:var(--accent)}
+.ic{width:1.15em;height:1.15em;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.small-btn,.tick{display:inline-flex;align-items:center;justify-content:center}
+
+/* ================= LAYOUT ================= */
+.app{flex:1;display:flex;min-height:0;overflow:hidden}
+.sidebar{
+  width:420px;flex:0 0 420px;background:var(--card);
+  border-right:2px solid var(--line);padding:16px;
+  display:flex;flex-direction:column;gap:16px;
+  min-height:0;overflow-y:auto;
+}
+.cal{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+
+/* ================= TOP BAR ================= */
+.topbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px 20px;background:var(--accent);color:var(--accent-ink);
+}
+.brand{display:flex;align-items:flex-end;gap:10px;margin-right:auto}
+.brand h1{display:flex;align-items:center;margin:0;font-size:22px}
+.logo{height:28px;width:auto;display:block}
+.brand span{color:var(--accent-ink);opacity:.75;font-size:15px;line-height:1;transform:translateY(2px)}
+.topbar .icon-btn{background:transparent;border-color:var(--accent-ink)}
+.topbar .btn-quiet{background:transparent;border-color:var(--accent-ink);color:var(--accent-ink)}
+.topbar .btn-quiet:hover{border-color:var(--accent-ink);filter:brightness(1.15)}
+
+/* ================= ADD CARD ================= */
+.card{
+  background:var(--card);border:2px solid var(--line);border-radius:16px;
+  padding:16px;display:flex;flex-direction:column;gap:12px;
+}
+.type-switch{display:flex;gap:8px;flex-wrap:wrap}
+.type-switch button{
+  flex:1;min-height:44px;border-radius:12px;border:2px solid var(--line);
+  background:var(--bg);font-weight:700;padding:4px 6px;
+}
+.type-switch button[data-type="task"].active{background:var(--task-edge);color:#ffffff;border-color:var(--task-edge)}
+.type-switch button[data-type="event"].active{background:var(--evt-edge);color:#ffffff;border-color:var(--evt-edge)}
+.type-switch button[data-type="deadline"].active{background:var(--dl-edge);color:#ffffff;border-color:var(--dl-edge)}
+.type-switch button[data-type="habit"].active{background:var(--hab-edge);color:#ffffff;border-color:var(--hab-edge)}
+.type-switch button[data-type="task"]{background:var(--task-bg);border-color:var(--task-edge)}
+.type-switch button[data-type="event"]{background:var(--evt-bg);border-color:var(--evt-edge)}
+.type-switch button[data-type="deadline"]{background:var(--dl-bg);border-color:var(--dl-edge)}
+.type-switch button[data-type="habit"]{background:var(--hab-bg);border-color:var(--hab-edge)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-weight:700}
+.field label .opt{font-weight:400;color:var(--soft)}
+
+.field .hint{color:var(--soft);font-size:15px}
+input[type=text],input[type=time],input[type=date],select,textarea{
+  min-height:44px;border:2px solid var(--line);border-radius:12px;
+  padding:6px 12px;background:var(--bg);width:100%;
+}
+textarea{min-height:64px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > *{flex:1}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions .btn,.actions .btn-quiet{width:100%;min-height:48px}
+.row > .hint{flex:0 0 auto}
+input[type=number]{background:var(--bg);border:2px solid var(--line);border-radius:12px;color:var(--ink);padding:6px 12px;font-size:16px}
+.day-chips{display:flex;gap:8px}
+.day-chips button{
+  flex:1;min-height:44px;border-radius:12px;border:2px solid var(--line);
+  background:var(--bg);font-weight:700;font-size:16px;
+}
+.day-chips button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* ================= HELP BOX ================= */
+details.help{background:var(--bg);border:2px solid var(--line);border-radius:16px;padding:12px 16px}
+details.help summary{
+  font-weight:700;min-height:44px;display:flex;align-items:center;cursor:pointer;
+  list-style:none;
+}
+details.help summary::before{content:"▸ ";font-size:14px}
+details.help[open] summary::before{content:"▾ "}
+details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.kbd{
+  font-family:inherit;border:1px solid var(--line);border-bottom-width:3px;
+  border-radius:6px;padding:1px 8px;background:var(--card);font-weight:700;
+}
+
+/* ================= PANELS (habits / week list / today) ================= */
+.panel{border:2px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.panel-head{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  font-weight:700;background:var(--bg);flex-wrap:wrap;
+}
+.panel-head .count{color:var(--soft);font-weight:400;margin-left:auto}
+.panel-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
+.side-scroll{display:flex;flex-direction:column;gap:16px}
+
+.todo-item{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+  border:2px solid var(--line);border-radius:14px;background:var(--bg);
+}
+.todo-item .main{flex:1;min-width:0;cursor:pointer}
+.todo-item .title{font-weight:700;overflow-wrap:anywhere}
+.todo-item .meta{color:var(--soft);font-size:15px;overflow-wrap:anywhere}
+.todo-item .actions{display:flex;gap:6px}
+.small-btn{
+  min-width:40px;min-height:40px;border-radius:10px;border:2px solid var(--line);
+  background:var(--card);font-size:18px;line-height:1;
+}
+.small-btn.star-on{background:var(--dl-bg);border-color:var(--dl-edge)}
+.tick{
+  min-width:44px;min-height:44px;border-radius:12px;border:2px solid var(--line);
+  background:var(--card);font-size:20px;font-weight:700;flex:0 0 auto;
+}
+.tick[aria-pressed="true"]{background:var(--evt-bg);border-color:var(--evt-edge)}
+.todo-item.done .title{text-decoration:line-through;opacity:.65}
+.todo-item.done .meta{opacity:.65}
+.warn-note{color:var(--warn);font-size:15px}
+
+.habit-row{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:2px solid var(--line);border-radius:14px;background:var(--bg)}
+.habit-row.done{border-color:var(--evt-edge)}
+.habit-dots{display:flex;gap:6px;margin-top:6px}
+.hdot{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.hdot.sch{background:var(--hab-edge)}
+.hdot.sch.done{background:var(--evt-edge)}
+.hdot.sch.miss{background:var(--dl-edge)}
+.hdot.today{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ================= CALENDAR ================= */
+.toolbar{
+  display:flex;align-items:center;gap:10px;padding:14px 20px;flex-wrap:wrap;
+  border-bottom:2px solid var(--line);background:var(--card);
+}
+.toolbar .date{font-size:19px;font-weight:700;margin-right:auto}
+.view-switch{display:flex;gap:6px}
+.view-switch button{
+  min-height:44px;padding:6px 14px;border-radius:12px;border:2px solid var(--line);
+  background:var(--bg);font-weight:700;
+}
+.view-switch button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cal-outer{flex:1;overflow:auto;min-height:0;padding:8px 16px}
+.hour-head,.cal-head-days{display:grid;grid-template-columns:64px 1fr}
+.wk-heads,.wk-body{display:grid;grid-template-columns:64px repeat(7,1fr)}
+.cal-head-days div,.wk-heads div{
+  padding:8px 4px;text-align:center;font-weight:700;color:var(--soft);
+}
+.cal-head-days div.this-week,.wk-heads div.this-week{color:var(--ink)}
+.wk-heads .wn{
+  background:var(--accent);color:var(--accent-ink);border-radius:50%;
+  min-width:28px;min-height:28px;display:inline-flex;align-items:center;justify-content:center;
+}
+.hours-col div{
+  height:76px;text-align:right;padding-right:8px;color:var(--soft);
+  font-size:15px;line-height:1;padding-top:4px;
+}
+.events-col{
+  position:relative;border-left:2px solid var(--line);
+  background-image:repeating-linear-gradient(
+    to bottom, var(--grid) 0 1px, transparent 1px 76px);
+  border-radius:0 12px 12px 0;
+}
+.block{
+  position:absolute;left:8px;right:8px;border-radius:12px;padding:8px 12px;
+  border-left:8px solid;box-shadow:var(--shadow);cursor:pointer;overflow:hidden;
+  color:var(--ink);
+}
+.block .b-time{font-size:15px;font-weight:700}
+.block .b-title{font-weight:700;overflow-wrap:anywhere}
+.block .b-del{
+  position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:8px;
+  background:var(--card);border:2px solid var(--line);font-weight:700;
+}
+.block.b-task{background:var(--task-bg);border-color:var(--task-edge)}
+.block.b-evt{background:var(--evt-bg);border-color:var(--evt-edge)}
+.block.b-hab{background:var(--hab-bg);border-color:var(--hab-edge)}
+.block.b-done .b-title{text-decoration:line-through;opacity:.6}
+.block .b-del{opacity:.75}   /* always visible — no hover-only controls */
+.now-line{position:absolute;left:0;right:0;height:3px;background:var(--warn);z-index:5}
+.deadline-pin{
+  position:absolute;left:8px;right:8px;border-radius:12px;padding:8px 12px;
+  background:var(--dl-bg);border-left:8px solid var(--dl-edge);
+  cursor:pointer;box-shadow:var(--shadow);
+}
+.wk-day{position:relative;border-left:1px solid var(--line);overflow:hidden}
+.wk-day .events-col{
+  height:52px;border-left:none;
+  background-image:repeating-linear-gradient(
+    to bottom, var(--grid) 0 1px, transparent 1px 52px);
+}
+.wk-day .block{padding:4px 8px}
+.wk-day .block .b-title{font-size:15px}
+.wk-day .block .b-time{font-size:13.5px}
+
+/* Month */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.month-cell{
+  min-height:110px;border:2px solid var(--line);border-radius:12px;
+  padding:6px;display:flex;flex-direction:column;gap:4px;background:var(--card);
+  cursor:pointer;
+}
+.month-cell.out{opacity:.45}
+.month-cell.today{border-color:var(--accent)}
+.month-cell.selected{outline:3px solid var(--accent);outline-offset:-3px}
+.m-date{font-weight:700;color:var(--soft);align-self:flex-end;padding:0 4px}
+.month-cell.today .m-date{color:var(--accent-ink);background:var(--accent);border-radius:50%;
+  min-width:28px;text-align:center}
+.m-chip{
+  font-size:15px;padding:2px 8px;border-radius:8px;overflow:hidden;
+  white-space:normal;border-left:5px solid;
+}
+.m-chip.c-task{background:var(--task-bg);border-color:var(--task-edge)}
+.m-chip.c-evt{background:var(--evt-bg);border-color:var(--evt-edge)}
+.m-chip.c-dl{background:var(--dl-bg);border-color:var(--dl-edge)}
+.m-chip.c-hab{background:var(--hab-bg);border-color:var(--hab-edge)}
+.m-more{color:var(--soft);font-size:15px}
+
+/* ================= MODALS / DIALOGS ================= */
+.backdrop{
+  position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;
+  display:none;align-items:flex-start;justify-content:center;padding:24px 12px;
+  overflow-y:auto;
+}
+.backdrop.open{display:flex}
+.dialog{
+  background:var(--card);border:2px solid var(--line);border-radius:20px;
+  padding:24px;max-width:640px;width:100%;margin:auto;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:16px;
+}
+.dialog h2{font-size:22px}
+.dialog .sub{color:var(--soft)}
+.dialog-head{display:flex;align-items:flex-start;gap:12px}
+.dialog-head .icon-btn{margin-left:auto;flex:0 0 auto}
+.step-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:8px;border:2px solid var(--line);border-radius:12px;background:var(--bg)}
+.step-row .num{font-weight:700;color:var(--soft);min-width:34px}
+.step-row input[type=text]{flex:2;min-width:160px}
+.step-row input[type=number]{width:84px;min-height:44px;border:2px solid var(--line);
+  border-radius:12px;padding:6px 8px;background:var(--bg)}
+.total-line{font-weight:700;text-align:center}
+.dialog-foot{display:flex;gap:10px;flex-wrap:wrap}
+.dialog-foot .btn{flex:2}
+.dialog-foot .btn-quiet{flex:1}
+
+/* Mini chooser (edit one step / whole task) */
+.mini-dialog{
+  background:var(--card);border:2px solid var(--line);border-radius:16px;
+  padding:20px;max-width:440px;width:100%;margin:auto;
+  display:flex;flex-direction:column;gap:12px;
+}
+.mini-dialog .opts{display:flex;flex-direction:column;gap:10px}
+.mini-dialog .opts button{
+  text-align:left;padding:12px;border:2px solid var(--line);border-radius:12px;
+  background:var(--bg);display:flex;flex-direction:column;gap:2px;min-height:44px;
+}
+.mini-dialog .opts button:hover{border-color:var(--accent)}
+.mini-dialog .set-head{font-size:14px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.6px;margin-top:8px}
+.mini-dialog .opts .set-item{
+  display:flex;flex-direction:row;align-items:center;gap:12px;
+  text-align:left;width:100%;padding:12px 14px;min-height:44px;
+}
+.mini-dialog .set-item .set-txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mini-dialog .set-item .set-title{font-weight:700}
+.mini-dialog .set-item .set-sub{color:var(--soft);font-size:15px}
+.mini-dialog .set-item .set-val{flex:0 0 auto;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-size:15px}
+.mini-dialog .set-item .set-val:empty{display:none}
+
+/* ================= TOAST ================= */
+.toast{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:12px;
+  font-weight:700;max-width:min(560px,92vw);z-index:99;display:none;
+  box-shadow:var(--shadow);text-align:center;
+}
+.toast.error{background:var(--dl-edge);color:#1c1108}
+
+/* ================= MOBILE ================= */
+.tabs{display:none}
+@media (max-width:820px){
+  .app{flex-direction:column;padding-bottom:64px}
+  .sidebar{width:100%;flex:1 1 auto;min-height:0;overflow-y:auto;border-right:none;border-bottom:2px solid var(--line);
+    max-height:none;display:none}
+  body.mobile-tab-list .sidebar{display:flex}
+  body.mobile-tab-list .cal{display:none}
+  .cal{display:flex}
+  .tabs{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--card);
+    border-top:2px solid var(--line);
+  }
+  .tabs button{flex:1;min-height:56px;font-weight:700;font-size:17px}
+  .tabs button.active{background:var(--accent);color:var(--accent-ink)}
+  .logo{height:32px}
+}
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></symbol>
+  <symbol id="i-chev-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-chev-up" viewBox="0 0 24 24"><polyline points="6 15 12 9 18 15"/></symbol>
+  <symbol id="i-chev-left" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="i-chev-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon fill="currentColor" stroke="currentColor" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-staro" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+</svg>
+
+<!-- TOP BAR -->
+<header class="topbar container">
+  <div class="brand">
+    <h1><img src="logo.png" alt="ADHdeer" class="logo"></h1>
+    <span>make your daunting tasks seem highly doe-able</span>
+  </div>
+  <button class="icon-btn" id="themeBtn" aria-label="Switch between light and dark colours" title="Switch light / dark"><svg class="ic"><use href="#i-moon"/></svg></button>
+  <button class="icon-btn" id="toolsBtn" aria-haspopup="menu" aria-label="Open the settings menu" title="Settings"><svg class="ic"><use href="#i-sliders"/></svg></button>
+  <button class="btn-quiet" id="helpBtn">Help</button>
+</header>
+
+<main class="app">
+  <!-- LEFT: MY LIST -->
+  <aside class="sidebar" aria-label="My list">
+    <div class="card" id="addCard">
+      <div class="type-switch" role="radiogroup" aria-label="What are you adding?" id="typeSwitch">
+        <button type="button" data-type="task" class="active" aria-pressed="true">To&nbsp;do</button>
+        <button type="button" data-type="event" aria-pressed="false">Event</button>
+        <button type="button" data-type="deadline" aria-pressed="false">Deadline</button>
+        <button type="button" data-type="habit" aria-pressed="false">Habit</button>
+      </div>
+
+      <div class="field">
+        <label for="taskTitle" id="titleLabel">What needs doing?</label>
+        <input type="text" id="taskTitle" placeholder="e.g. write report" autocomplete="off">
+      </div>
+
+      <div class="field" id="detailsField">
+        <label for="taskDetails">Notes <span class="opt">(optional)</span></label>
+        <textarea id="taskDetails" rows="2" placeholder="Anything you want to remember about it"></textarea>
+      </div>
+
+      <div class="field" id="durField">
+        <label for="durHours">How long will it take?</label>
+        <div class="row">
+          <input type="number" id="durHours" min="0" max="24" step="1" value="0" title="Hours">
+          <span class="hint">hours</span>
+          <input type="number" id="durMinutes" min="0" max="55" step="5" value="30" title="Minutes">
+          <span class="hint">minutes</span>
+        </div>
+      </div>
+
+      <div class="field" id="fixedTimeRow">
+        <label for="taskTime">Start time <span class="opt">(leave blank for it to be allocated for you)</span></label>
+        <input type="time" id="taskTime">
+      </div>
+
+      <div class="field" id="eventTypeRow">
+        <label for="taskTime">Event type <span class="opt">(optional)</span></label>
+        <select id="eventType">
+          <option value="" selected>No label</option>
+          <option value="meeting">Meeting</option>
+          <option value="class">Class</option>
+          <option value="gathering">Gathering</option>
+          <option value="appointment">Appointment</option>
+          <option value="custom">Something else…</option>
+        </select>
+        <input type="text" id="eventCustomLabel" placeholder="Give it a name" style="display:none">
+      </div>
+
+      <div class="field" id="deadlineRow">
+        <label for="deadlineDate">Due by</label>
+        <div class="row">
+          <input type="date" id="deadlineDate">
+          <input type="time" id="deadlineTime" value="17:00">
+        </div>
+      </div>
+
+      <div class="field" id="habitDaysRow">
+        <label>Which days?</label>
+        <div class="day-chips" id="habitDays">
+          <button type="button" data-d="0" class="on" aria-pressed="true">Mon</button>
+          <button type="button" data-d="1" class="on" aria-pressed="true">Tue</button>
+          <button type="button" data-d="2" class="on" aria-pressed="true">Wed</button>
+          <button type="button" data-d="3" class="on" aria-pressed="true">Thu</button>
+          <button type="button" data-d="4" class="on" aria-pressed="true">Fri</button>
+          <button type="button" data-d="5" aria-pressed="false">Sat</button>
+          <button type="button" data-d="6" aria-pressed="false">Sun</button>
+        </div>
+      </div>
+
+      <div class="field" id="habitTimeRow">
+        <label for="habitTimeMode">Best time of day</label>
+        <div class="row">
+          <select id="habitTimeMode">
+            <option value="auto" selected>Any time — ADHdeer will find a gap</option>
+            <option value="fixed">A set time</option>
+          </select>
+          <input type="time" id="habitTime" style="display:none">
+        </div>
+      </div>
+
+      <div class="field" id="windowRow">
+        <label for="taskWindow">Time window to allocate it in:</label>
+        <select id="taskWindow">
+          <option value="default" selected>Usual hours (those you picked in settings)</option>
+          <option value="workday">Work hours (9–5)</option>
+          <option value="morning">Morning (6–12)</option>
+          <option value="afternoon">Afternoon (12–6)</option>
+          <option value="evening">Evening (5–11)</option>
+          <option value="night">Late (8–midnight)</option>
+          <option value="custom">My own hours…</option>
+        </select>
+        <div class="row" id="customWindowRow" style="display:none">
+          <input type="time" id="windowFrom" value="09:00" title="Not before">
+          <input type="time" id="windowTo" value="22:00" title="Not after">
+        </div>
+      </div>
+
+      <button class="btn-quiet" id="advBtn" aria-expanded="false">More options <svg class="ic"><use href="#i-chev-down"/></svg></button>
+
+      <div class="actions">
+        <button class="btn-quiet" id="estimateBtn" title="Have a guess at how long this takes"><svg class="ic"><use href="#i-clock"/></svg>&nbsp;Guess the time</button>
+        <button class="btn-quiet" id="breakdownBtn" title="Split this into smaller steps"><svg class="ic"><use href="#i-scissors"/></svg>&nbsp;Split it up</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="addBtn">Add to my day</button>
+        <button class="btn-quiet" id="poolBtn" title="Save it for later in the week">For later this week</button>
+      </div>
+    </div>
+
+    <details class="help">
+      <summary>Quick tips</summary>
+      <ul>
+        <li>Leave the start time empty and I'll slot things into your free gaps automatically.</li>
+        <li>Star (&#9733;) means important — it gets first pick of gaps.</li>
+        <li>Press <span class="kbd">Enter</span> to add, <span class="kbd">R</span> to rearrange today, <span class="kbd">Esc</span> to close things.</li>
+        <li><button class="btn-quiet" id="guideBtnInline" style="min-height:0;padding:2px 10px">Read the full guide</button></li>
+      </ul>
+    </details>
+
+    <div class="side-scroll">
+      <div class="panel" id="poolPanel" style="display:none">
+        <div class="panel-head">Waiting for later this week <span class="count" id="poolCount"></span></div>
+        <div class="panel-body" id="poolList"></div>
+      </div>
+      <div class="panel" id="habitsPanel" style="display:none">
+        <div class="panel-head">Habits <span class="count" id="habitsCount"></span></div>
+        <div class="panel-body" id="habitsList"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span id="dayHeading">My day</span>
+          <button class="btn-quiet" id="packBtn">Rearrange the day</button>
+        </div>
+        <div class="panel-body" id="todoList"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT: CALENDAR -->
+  <section class="cal" aria-label="Calendar">
+    <div class="toolbar">
+      <button class="icon-btn" id="prevBtn" aria-label="Earlier"><svg class="ic"><use href="#i-chev-left"/></svg></button>
+      <span class="date" id="dateLabel" aria-live="polite"></span>
+      <button class="icon-btn" id="nextBtn" aria-label="Later"><svg class="ic"><use href="#i-chev-right"/></svg></button>
+      <button class="btn-quiet" id="todayBtn">Today</button>
+      <div class="view-switch" role="radiogroup" aria-label="Calendar view">
+        <button id="vDay" class="active" aria-pressed="true">Day</button>
+        <button id="vWeek" aria-pressed="false">Week</button>
+        <button id="vMonth" aria-pressed="false">Month</button>
+      </div>
+      <button class="btn-quiet" id="packWeekBtn">Fill this week</button>
+    </div>
+    <div class="cal-outer" id="calOuter">
+      <div class="cal-head-days" id="calHead" aria-hidden="true"></div>
+      <div id="calScroll"></div>
+    </div>
+  </section>
+</main>
+
+<!-- SPLIT-IN-STEPS DIALOG -->
+<div class="backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="dialog">
+    <div class="dialog-head">
+      <div>
+        <h2 id="modalTitle">Split it up</h2>
+        <p class="sub" id="modalSub"></p>
+      </div>
+      <button class="icon-btn" id="modalCancel" aria-label="Close this window">&#10005;</button>
+    </div>
+    <div id="modalSteps" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="total-line" id="modalTotal"></div>
+    <div class="dialog-foot">
+      <button class="btn-quiet" id="modalAddStep">Add a step</button>
+      <button class="btn" id="modalConfirm">Put steps in my plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MENU -->
+<nav class="backdrop" id="toolsBackdrop">
+  <div class="mini-dialog" role="menu" aria-label="Settings">
+    <div class="dialog-head">
+      <h2>Settings</h2>
+      <button class="icon-btn" id="settingsCloseBtn" aria-label="Close settings">&#10005;</button>
+    </div>
+
+    <h3 class="set-head">Calendar</h3>
+    <div class="opts">
+      <button id="dayHoursBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Show hours</span><span class="set-sub">what the calendar displays</span></span>
+        <span class="set-val" id="dayHoursLbl"></span>
+      </button>
+      <button id="slotHoursBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Place new to-dos between</span><span class="set-sub">when things get slotted in</span></span>
+        <span class="set-val" id="slotHoursLbl"></span>
+      </button>
+    </div>
+
+    <h3 class="set-head">Saving &amp; backups</h3>
+    <div class="opts">
+      <button id="exportBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Save a backup file</span><span class="set-sub">keeps a copy safe outside this app</span></span>
+      </button>
+      <button id="importBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Load a backup file</span><span class="set-sub">brings a saved copy back</span></span>
+      </button>
+      <button id="nasCfgBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Set up my home storage (NAS)</span><span class="set-sub">do this once, then save &amp; load between devices</span></span>
+      </button>
+      <button id="nasUpBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Save to my home storage</span><span class="set-sub">uploads this device's planner</span></span>
+      </button>
+      <button id="nasDownBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Load from my home storage</span><span class="set-sub">brings the latest copy onto this device</span></span>
+      </button>
+    </div>
+
+    <h3 class="set-head">Help</h3>
+    <div class="opts">
+      <button id="guideBtnSettings" class="set-item">
+        <span class="set-txt"><span class="set-title">Read the full guide</span><span class="set-sub">how everything works</span></span>
+      </button>
+    </div>
+    <p class="sub" id="staleInfo" style="font-size:15px"></p>
+  </div>
+</nav>
+
+<!-- FULL GUIDE -->
+<div class="backdrop" id="guideBackdrop" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="dialog">
+    <div class="dialog-head">
+      <div><h2 id="guideTitle">How to use this planner</h2>
+      <p class="sub">A planner to help you get things done — nothing complicated, just your stuff, planned the way you need.</p></div>
+      <button class="icon-btn" id="guideClose" aria-label="Close the guide">&#10005;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <h3>The four kinds of things</h3>
+        <p><b>To do</b> — something you need to do. Leave the time empty and I'll find a gap; set a time (or tap one on the calendar) to fix it in place. Star (&#9733;) means important, and important things get the best gaps.</p>
+        <p><b>Event</b> — happens at a set time (a class, a meeting). Pick the day, the start time and how long it lasts.</p>
+        <p><b>Deadline</b> — a moment something is due. Add it, then tap <b>Split it up</b> and I'll spread the work over the days before it, around the things already in your calendar.</p>
+        <p><b>Habit</b> — something you repeat, like reading 20 pages. Pick your days and tick it off as you go. Your streak grows with every day you keep it up.</p>
+      </div>
+      <div>
+        <h3>A normal day</h3>
+        <p>1. Add what you need to do. Times sort themselves out — you don't have to plan.</p>
+        <p>2. Look at today. Everything is colour-coded and labelled, and tapping a block opens it for editing.</p>
+        <p>3. Change your mind? Rearrange with the <b>Rearrange the day</b> button — fixed things stay put, everything else shuffles around them.</p>
+      </div>
+      <div>
+        <h3>When something feels too big</h3>
+        <p>Type it and press <b>Split it up</b>. I'll break it into smaller steps and schedule each one. If you're not sure how long it takes, press <b>Guess the time</b>.</p>
+      </div>
+      <div>
+        <h3>Saving and moving devices</h3>
+        <p>Your planner lives in this browser. Deleting your browsing data will remove it, so keep backups.</p>
+        <p><b>Save a backup file</b> gives you a copy to keep anywhere (Drive, iCloud). <b>Load a backup file</b> brings it back on a new device.</p>
+        <p>If you have a home storage box (NAS), set it up once in Settings, then <b>Save to my home storage</b> at the end of a session and <b>Load from</b> it when you start on another device. The newest copy wins, so sync between edits, not after.</p>
+      </div>
+      <div>
+        <h3>Keyboard shortcuts (computer)</h3>
+        <p><span class="kbd">Enter</span> add &nbsp; <span class="kbd">R</span> rearrange &nbsp; <span class="kbd">E</span> change what you're adding &nbsp; <span class="kbd">Esc</span> close</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHOICE WINDOW (step or whole task?) -->
+<div class="backdrop" id="choiceBackdrop">
+  <div class="mini-dialog" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
+    <h2 id="choiceTitle"></h2>
+    <div class="opts" id="choiceOpts"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<nav class="tabs" aria-label="Switch screens">
+  <button id="tabList">My list</button>
+  <button id="tabCal">Calendar</button>
+</nav>
+
+<script>
+/* ADHdeer — SCRIPT CHUNK 3 OF 5 (the engine)
+   First line of this chunk:  <script>
+   Last line of this chunk:   ===== CHUNK 4 CONTINUES BELOW =====
+   Paste this ONCE, replacing BOTH old JavaScript chunks entirely. */
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+
+  /* ================= SETTINGS & STORAGE =================
+     Same localStorage keys as the old app, so your
+     existing planner opens exactly as you left it. */
+  let DAY_START = 0, DAY_END = 1440;
+  let SLOT_START = 420, SLOT_END = 1020;      // 7:00–17:00 default
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem("plannerSettings")) || {};
+      if (s.dayStart != null) DAY_START = s.dayStart;
+      if (s.dayEnd != null) DAY_END = s.dayEnd;
+      if (s.slotStart != null) SLOT_START = s.slotStart;
+      if (s.slotEnd != null) SLOT_END = s.slotEnd;
+    } catch {}
+  }
+  function saveSettings() {
+    localStorage.setItem("plannerSettings", JSON.stringify(
+      { dayStart: DAY_START, dayEnd: DAY_END, slotStart: SLOT_START, slotEnd: SLOT_END }));
+  }
+  loadSettings();
+
+  const PX_DAY = 76 / 60, PX_WEEK = 52 / 60, GRID_STEP = 15;
+
+  function load() { try { return JSON.parse(localStorage.getItem("plannerState")) || {}; } catch { return {}; } }
+  function loadHabits() { try { const h = JSON.parse(localStorage.getItem("plannerHabits")); return Array.isArray(h) ? h : []; } catch { return []; } }
+  function loadPool() { try { const p = JSON.parse(localStorage.getItem("plannerWeekPool")); return Array.isArray(p) ? p : []; } catch { return []; } }
+
+  function guessDeviceName() {
+    try {
+      const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+      const m = p.match(/Win|Mac|Linux|Android|iPhone|iPad/i);
+      return m ? m[0] : "this device";
+    } catch { return "this device"; }
+  }
+  function stampEdit() {
+    localStorage.setItem("plannerLastEdit", JSON.stringify({ at: new Date().toISOString(),
+      device: localStorage.getItem("plannerDeviceName") || guessDeviceName() }));
+  }
+  function save() { localStorage.setItem("plannerState", JSON.stringify(state)); stampEdit(); refreshStaleInfo(); }
+  function saveHabits() { localStorage.setItem("plannerHabits", JSON.stringify(habits)); stampEdit(); refreshStaleInfo(); }
+  function savePool() { localStorage.setItem("plannerWeekPool", JSON.stringify(weekPool)); stampEdit(); refreshStaleInfo(); }
+
+  let state = load();
+  let habits = loadHabits();
+  let weekPool = loadPool();
+  let currentDate = dateKey(new Date());
+  let view = "day";
+  let entryType = "task";
+  let modalCtx = null;                      // breakdown / deadline-planning dialog state
+  let editId = null, editKey = null, editGroupId = null;   // edit-in-form state (used by later chunks)
+  let advanced = false;
+
+  function dateKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function parseDate(key) { const [y,m,d]=key.split("-").map(Number); return new Date(y,m-1,d); }
+  function itemsFor(key) { if (!state[key]) state[key]=[]; return state[key]; }
+  const items = () => itemsFor(currentDate);
+  const isToday = k => k === dateKey(new Date());
+  function startOfWeek(d) { const x = new Date(d); const dow = (x.getDay()+6)%7; x.setDate(x.getDate()-dow); return x; }
+  function addDays(d,n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const toMin = hhmm => { const [h,m]=hhmm.split(":").map(Number); return h*60+m; };
+  const pad = n => String(n).padStart(2,"0");
+  const fmtTime = m => pad(Math.floor(m/60))+":"+pad(m%60);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const dayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const isDeadline = i => i && i.kind === "deadline";
+  function fmtDay(key) { return parseDate(key).toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" }); }
+  const fmtDue = (key,mins) => fmtDay(key)+" "+fmtTime(mins);
+  const effMin = i => i.kind === "deadline" ? i.dueTime : (i.time ?? 1e9);
+  function shortTitle(t, n) { t = t.replace(/^\[\d+\/\d+\]\s*/,""); return t.length > (n||42) ? t.slice(0,(n||42)-1)+"…" : t; }
+  function fmtDur(mins) {
+    const h = Math.floor(mins/60), m = mins%60;
+    if (!h) return m+" min";
+    return h+" hr"+(h===1?"":"s")+(m?" "+m+" min":"");
+  }
+  function planStepsFor(id) {
+    const out = [];
+    Object.keys(state).forEach(k => { (state[k]||[]).forEach(i => { if (i.parent === id) out.push({ key:k, item:i }); }); });
+    return out.sort((a,b)=>(a.item.stepIdx??0)-(b.item.stepIdx??0));
+  }
+
+  function toast(msg, isErr) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.className = "toast" + (isErr ? " error" : "");
+    t.style.display = "block";
+    clearTimeout(t._tm);
+    t._tm = setTimeout(() => t.style.display = "none", isErr ? 5000 : 3200);
+  }
+
+  /* ================= TIME GUESSER ================= */
+  const EST_RULES = [
+    { re:/\b(email|reply|respond|message|ping)\b/i, min:15, label:"a short message" },
+    { re:/\b(call|ring|phone)\b/i, min:20, label:"a phone call" },
+    { re:/\b(meeting|standup|sync|1:1|catch[- ]up)\b/i, min:45, label:"a meeting" },
+    { re:/\b(report|essay|write.?up|memo|document|doc)\b/i, min:90, label:"a lot of writing" },
+    { re:/\b(presentation|slides|deck|pitch)\b/i, min:90, label:"building a presentation" },
+    { re:/\b(bug|debug|fix|patch|hotfix)\b/i, min:60, label:"fixing something" },
+    { re:/\b(code|implement|build|develop|feature|refactor|deploy)\b/i, min:120, label:"building something" },
+    { re:/\b(review|proofread|check|verify|audit)\b/i, min:45, label:"checking something over" },
+    { re:/\b(plan|outline|prep|prepare|research|gather)\b/i, min:30, label:"planning or prepping" },
+    { re:/\b(read|study|learn|course|tutorial)\b/i, min:60, label:"reading or studying" },
+    { re:/\b(shopping|errand|groceries|buy)\b/i, min:60, label:"going out for something" },
+    { re:/\b(clean|tidy|laundry|dishes|organise|organize)\b/i, min:30, label:"a household job" },
+    { re:/\b(invoice|expense|budget|tax|bookkeeping|admin|form|application)\b/i, min:45, label:"paperwork" },
+    { re:/\b(exercise|workout|gym|run|walk|train)\b/i, min:45, label:"exercise" },
+    { re:/\b(design|mockup|wireframe|logo)\b/i, min:90, label:"design work" },
+    { re:/\b(data|analysis|analy[sz]e|spreadsheet|crunch)\b/i, min:60, label:"working with data" },
+  ];
+  const SMALL_WORDS = /\b(quick|brief|short|small|minor|tiny|fast|simple|just)\b/i;
+  const BIG_WORDS   = /\b(big|major|huge|full|complete|thorough|deep|whole|entire|detailed)\b/i;
+
+  function estimateDuration(title) {
+    let base = 30, label = "an everyday job", matched = false;
+    const wc = title.match(/(\d[\d,\s]{1,6}?)\s*-?\s*words?\b/i);
+    if (wc) {
+      const words = parseInt(wc[1].replace(/[,\s]/g,""),10);
+      if (words >= 100) { base = Math.ceil(words*0.12/5)*5; label = words+" words of writing"; matched = true; }
+    }
+    for (const r of EST_RULES) { if (r.re.test(title)) { base = r.min; label = r.label; matched = true; break; } }
+    let factor = 1; const why = [];
+    if (SMALL_WORDS.test(title)) { factor *= 0.5; why.push("sounds like a quick one"); }
+    if (BIG_WORDS.test(title))   { factor *= 1.5; why.push("sounds like a big one"); }
+    const parts = title.split(/&|and|,|\+/i).filter(s => s.trim().length > 2).length;
+    if (parts > 1) { factor += (parts-1)*0.6; why.push(parts+" things bundled together"); }
+    if (!matched) why.push("nothing special about the wording");
+    let min = Math.max(10, Math.round(base*factor/5)*5);
+    if (min > 480) min = 480;
+    return { minutes:min, reason:"Sounds like "+label+(why.length?"; "+why.join("; "):"")+"." };
+  }
+
+  /* ================= SPLITTING BIG THINGS UP ================= */
+  const BREAKDOWN_TEMPLATES = [
+    { re:/\b(report|essay|write.?up|memo|document|doc)\b/i,
+      steps:[["List the main points",.20],["Write the rough draft",.45],["Read it back and fix it",.25],["Tidy up and send it",.10]] },
+    { re:/\b(presentation|slides|deck|pitch)\b/i,
+      steps:[["Decide the main message",.20],["Make the slides",.50],["Practise it once",.20],["Polish and finish",.10]] },
+    { re:/\b(code|implement|build|develop|feature|refactor|deploy)\b/i,
+      steps:[["Work out what's needed",.20],["Build the main thing",.50],["Test it and fix problems",.20],["Tidy and finish up",.10]] },
+    { re:/\b(bug|debug|fix|patch|hotfix)\b/i,
+      steps:[["Find out what's wrong",.30],["Fix it",.40],["Check the fix works",.30]] },
+    { re:/\b(meeting|standup|sync|1:1|call|catch[- ]up)\b/i,
+      steps:[["Get ready: notes and things to say",.30],["Be in the meeting",.50],["Write down what was decided",.20]] },
+    { re:/\b(review|proofread|check|verify|audit)\b/i,
+      steps:[["First read-through",.40],["Careful pass and corrections",.50],["Finish and reply",.10]] },
+    { re:/\b(shopping|errand|groceries)\b/i, steps:[["Make the list",.15],["Go and get it done",.85]] },
+    { re:/\b(read|study|learn|course|tutorial)\b/i,
+      steps:[["Skim it first",.25],["Work through it properly",.50],["Note the main takeaways",.25]] },
+    { re:/\b(invoice|expense|budget|tax|bookkeeping|admin|form|application)\b/i,
+      steps:[["Gather what you need",.30],["Do the main bit",.50],["Check and send it off",.20]] },
+  ];
+  const GENERIC_STEPS = [["Get ready and know when it's done",.15],["Do the main work",.60],["Check it over and wrap up",.25]];
+
+  function buildBreakdown(title, details) {
+    const est = estimateDuration(details ? title+" — "+details : title);
+    let tpl = GENERIC_STEPS;
+    for (const t of BREAKDOWN_TEMPLATES) { if (t.re.test(title)) { tpl = t.steps; break; } }
+    const steps = tpl.map(([text,frac]) => ({ text, minutes: Math.max(10, Math.round(est.minutes*frac/5)*5) }));
+    const diff = est.minutes - steps.reduce((s,x)=>s+x.minutes,0);
+    if (diff !== 0) { const last = steps[steps.length-1]; last.minutes = Math.max(10, last.minutes+diff); }
+    return { steps, estimate: est };
+  }
+
+  /* ================= FINDING GAPS ================= */
+  function busyIntervals(list) {
+    return list.filter(i => i.time != null).map(i => ({ start:i.time, end:i.time+i.duration })).sort((a,b)=>a.start-b.start);
+  }
+  function findFreeSlot(list, dur, from, to) {
+    from = Math.max(DAY_START, from == null ? SLOT_START : from);
+    to   = Math.min(DAY_END,   to   == null ? SLOT_END   : to);
+    if (!(to > from) || to - from < dur) return null;
+    const busy = busyIntervals(list);
+    let cursor = from;
+    for (const b of busy) {
+      if (b.end <= cursor) continue;
+      if (cursor + dur <= b.start) return cursor;
+      cursor = b.end;
+      if (cursor > to - dur) return null;
+    }
+    return (cursor + dur <= to) ? cursor : null;
+  }
+  function findFreeSlotUntil(list, dur, endLimit, wf, wt) {
+    const from = Math.max(DAY_START, wf != null ? wf : SLOT_START);
+    const cap  = Math.min(endLimit, wt != null ? wt : SLOT_END);
+    if (cap - from < dur) return null;
+    const busy = busyIntervals(list);
+    let cursor = from;
+    for (const b of busy) {
+      if (cursor + dur <= b.start) return cursor;
+      cursor = Math.max(cursor, b.end);
+      if (cursor > cap - dur) return null;
+    }
+    return (cursor + dur <= cap) ? cursor : null;
+  }
+  function slotFloor(key) {
+    if (key !== dateKey(new Date())) return DAY_START;
+    const n = new Date();
+    return Math.max(DAY_START, Math.ceil((n.getHours()*60+n.getMinutes())/5)*5);
+  }
+  function isPastDay(key) { return key < dateKey(new Date()); }
+  function itemWindow(i) {
+    if (i && i.slotFrom != null && i.slotTo != null && i.slotTo > i.slotFrom)
+      return [Math.max(DAY_START, i.slotFrom), Math.min(DAY_END, i.slotTo)];
+    let d0 = SLOT_START, d1 = SLOT_END;
+    if (!(d1 > d0)) { d0 = DAY_START; d1 = DAY_END; }
+    return [d0, d1];
+  }
+  function overlaps(list, start, end, ignoreId) {
+    return list.some(i => i.id !== ignoreId && i.time != null && start < i.time+i.duration && i.time < end);
+  }
+  function readDur() {
+    const h = parseInt($("durHours").value,10)||0;
+    const m = parseInt($("durMinutes").value,10)||0;
+    return Math.min(1440, Math.max(5, h*60+m));
+  }
+  function currentWindowChoice() {
+    const v = $("taskWindow").value;
+    if (v === "workday")  return [540, 1020];
+    if (v === "morning")   return [360, 720];
+    if (v === "afternoon") return [720, 1080];
+    if (v === "evening")   return [1020, 1380];
+    if (v === "night")     return [1200, 1440];
+    if (v === "custom") {
+      const f = $("windowFrom").value, t = $("windowTo").value;
+      if (f && t && toMin(t) > toMin(f)) return [toMin(f), toMin(t)];
+    }
+    return itemWindow(null);
+  }
+
+  /* ================= ADDING THINGS ================= */
+  function addTask() {
+    if (editId) { saveEdit(); return; }
+    const details = $("taskDetails").value.trim();
+    if (entryType === "deadline") { addDeadline(); return; }
+    if (entryType === "habit")   { addHabit();   return; }
+    const isEvent = entryType === "event";
+    if (isPastDay(currentDate)) { toast("That day has already happened — go to today or a future day first.", true); return; }
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast(isEvent ? "Give the event a name first." : "Say what needs doing first.", true); return; }
+    const duration = readDur();
+    const cap = isEvent ? 1440 : 480;
+    if (duration > cap) { toast(isEvent ? "Events can't be longer than a whole day." : "One to-do can't be longer than 8 hours — press Split it up to share it out.", true); return; }
+
+    const t = $("taskTime").value;
+    if (isEvent && !t) { toast("Events need a start time (or tap a time on the calendar).", true); return; }
+    if (t) {
+      const start = toMin(t);
+      if (start < DAY_START || start + duration > DAY_END) { toast("That's outside the hours your calendar shows ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+"). Widen them in Settings.", true); return; }
+      if (overlaps(items(), start, start+duration)) { toast("That time is already taken by something else.", true); return; }
+      if (isEvent) {
+        items().push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details });
+        toast("Event added: \""+title+"\" at "+fmtTime(start)+".");
+      } else {
+        items().push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details });
+        toast("Fixed in place: \""+title+"\" at "+fmtTime(start)+".");
+      }
+    } else {
+      const [wf, wt] = currentWindowChoice();
+      const from = Math.max(wf, slotFloor(currentDate));
+      const slot = findFreeSlot(items(), duration, from, wt);
+      if (slot == null) { toast("I couldn't find a free "+fmtDur(duration)+" gap between "+fmtTime(from)+" and "+fmtTime(wt)+". Try changing the hours under More options, or set a start time yourself.", true); return; }
+      items().push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt });
+      toast("\""+title+"\" slotted in at "+fmtTime(slot)+".");
+    }
+    clearForm(); save(); render();
+  }
+
+  function clearForm() {
+    $("taskTitle").value = ""; $("taskDetails").value = ""; $("taskTime").value = "";
+  }
+
+  function addToPool() {
+    if (editId) { toast("Finish editing first — press Save changes or Esc.", true); return; }
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast("Type the to-do first.", true); return; }
+    const duration = readDur();
+    const [wf, wt] = currentWindowChoice();
+    weekPool.push({ id:uid(), title, duration, priority:"normal", important:false, done:false, kind:"task", parent:null, slotFrom:wf, slotTo:wt });
+    clearForm(); savePool(); render();
+    toast("\""+title+"\" is waiting for later this week — press Fill this week when you're ready.");
+  }
+
+  /* ================= DEADLINES ================= */
+  function addDeadline() {
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast("Give the deadline a name first.", true); return null; }
+    const date = $("deadlineDate").value, timeStr = $("deadlineTime").value;
+    if (!date) { toast("Pick the day it's due.", true); return null; }
+    if (!timeStr) { toast("Pick the time it's due.", true); return null; }
+    if (date < dateKey(new Date())) { toast("That day has already passed.", true); return null; }
+    const dueTime = toMin(timeStr);
+    const [dwf, dwt] = currentWindowChoice();
+    const item = { id:uid(), title, kind:"deadline", dueDate:date, dueTime, done:false, important:false, parent:null, slotFrom:dwf, slotTo:dwt };
+    itemsFor(date).push(item);
+    clearForm(); save(); render();
+    toast("Deadline: \""+title+"\" due "+fmtDue(date, dueTime)+".");
+    return item;
+  }
+
+  function planWindow(startKey, dueKey) {
+    let from = startKey > dueKey ? dueKey : startKey;
+    const earliest = dateKey(addDays(parseDate(dueKey), -13));
+    if (from < earliest) from = earliest;
+    const keys = [];
+    let cur = parseDate(from); const end = parseDate(dueKey);
+    while (cur <= end && keys.length < 14) { keys.push(dateKey(cur)); cur = addDays(cur,1); }
+    return keys;
+  }
+
+  function planStepsBeforeDeadline(steps, dueKey, dueTime, doneIdx, wf, wt) {
+    wf = wf != null ? wf : SLOT_START;
+    wt = wt != null ? wt : SLOT_END;
+    if (!(wt > wf)) { wf = DAY_START; wt = DAY_END; }
+    const startKey = dateKey(new Date());
+    const days = planWindow(startKey, dueKey);
+    const tryDays = (fromIdx, minutes) => {
+      for (let k = Math.max(0, fromIdx); k < days.length; k++) {
+        const key = days[k];
+        const endCap = key === dueKey ? dueTime : wt;
+        const slot = findFreeSlotUntil(itemsFor(key), minutes, endCap, Math.max(wf, slotFloor(key)), wt);
+        if (slot != null) return { key, time:slot };
+      }
+      return null;
+    };
+    return steps.map((s, idx) => {
+      if (doneIdx && doneIdx.has(idx)) return "kept";
+      if (!days.length) return null;
+      const target = Math.min(days.length-1, Math.floor(idx * days.length / steps.length));
+      const placed = tryDays(target, s.minutes) || tryDays(0, s.minutes);
+      if (!placed) return null;
+      itemsFor(placed.key).push({
+        id:uid(), title:"["+(idx+1)+"/"+steps.length+"] "+modalCtx.title+": "+s.text,
+        duration:s.minutes, time:placed.time, kind:"task", done:false, important:false,
+        parent:modalCtx.parentId, stepText:s.text, stepIdx:idx, slotFrom:wf, slotTo:wt,
+      });
+      return placed;
+    });
+  }
+
+  function openDeadlinePlan(deadline) {
+    if (deadline.dueDate < dateKey(new Date())) { toast("That deadline has passed — nothing left to plan.", true); return; }
+    const existing = planStepsFor(deadline.id).map(x => x.item).filter(i => i.stepText);
+    const steps = existing.length ? existing.map(i => ({ text:i.stepText, minutes:i.duration })) : buildBreakdown(deadline.title).steps;
+    const [pwf, pwt] = itemWindow(deadline);
+    modalCtx = { parentId:deadline.id, title:deadline.title,
+      deadline:{ date:deadline.dueDate, time:deadline.dueTime }, winFrom:pwf, winTo:pwt };
+    $("modalTitle").textContent = "Spread \""+shortTitle(deadline.title,30)+"\" over the days before it";
+    $("modalSub").textContent = existing.length
+      ? "Re-planning keeps the steps you've finished and spreads the rest before "+fmtDue(deadline.dueDate, deadline.dueTime)+"."
+      : "I'll spread the steps over your free gaps between now and "+fmtDue(deadline.dueDate, deadline.dueTime)+". Nothing is planned after the deadline.";
+    $("modalConfirm").textContent = "Put steps in my plan";
+    renderModalSteps(steps);
+    $("modalBackdrop").classList.add("open");
+  }
+
+  /* ================= HABITS ================= */
+  function habitApplies(h, key) {
+    if (key < h.createdAt) return false;
+    const dow = (parseDate(key).getDay()+6)%7;
+    return (h.days||[]).includes(dow);
+  }
+  function findHabitOcc(habitId, key) {
+    return (state[key]||[]).find(i => i.kind==="habit" && i.habitId===habitId) || null;
+  }
+  function habitScheduleLabel(h) {
+    const d = (h.days||[]).slice().sort((a,b)=>a-b);
+    let when;
+    if (d.length === 7) when = "every day";
+    else if (d.join(",")==="0,1,2,3,4") when = "weekdays";
+    else if (d.join(",")==="5,6") when = "weekends";
+    else when = d.map(i => dayNames[i]).join(", ");
+    return when + (h.timeMode==="fixed" && h.time!=null ? " at "+fmtTime(h.time) : " — any time");
+  }
+  function habitStreak(h) {
+    const todayKey = dateKey(new Date());
+    let streak = 0, guard = 0;
+    if (habitApplies(h, todayKey)) { const o = findHabitOcc(h.id, todayKey); if (o && o.done) streak++; }
+    let key = dateKey(addDays(parseDate(todayKey), -1));
+    while (key >= h.createdAt && guard++ < 400) {
+      if (habitApplies(h, key)) { const o = findHabitOcc(h.id, key); if (o && o.done) streak++; else break; }
+      key = dateKey(addDays(parseDate(key), -1));
+    }
+    return streak;
+  }
+  function weekDots(h) {
+    const w0 = startOfWeek(new Date());
+    const todayKey = dateKey(new Date());
+    let out = "";
+    for (let k = 0; k < 7; k++) {
+      const key = dateKey(addDays(w0,k));
+      const occ = findHabitOcc(h.id, key);
+      let cls = "hdot";
+      if (habitApplies(h, key)) {
+        cls += " sch";
+        if (occ && occ.done) cls += " done";
+        else if (key < todayKey) cls += " miss";
+      }
+      if (key === todayKey) cls += " today";
+      out += '<span class="'+cls+'" title="'+dayNames[k]+'"></span>';
+    }
+    return out;
+  }
+  function ensureHabitOccurrences(fromKey, toKey) {
+    if (!habits.length || fromKey > toKey) return false;
+    let changed = false, key = fromKey, guard = 0;
+    while (key <= toKey && guard++ < 400) {
+      for (const h of habits) {
+        if (!habitApplies(h, key)) continue;
+        const list = itemsFor(key);
+        if (list.some(i => i.kind==="habit" && i.habitId===h.id)) continue;
+        const time = h.timeMode==="fixed" ? h.time : findFreeSlot(list, h.duration, slotFloor(key));
+        list.push({ id:uid(), title:h.title, duration:h.duration, time, kind:"habit", habitId:h.id, done:false, important:false, parent:null });
+        changed = true;
+      }
+      key = dateKey(addDays(parseDate(key), 1));
+    }
+    return changed;
+  }
+  function syncHabitRange() {
+    if (!habits.length) return;
+    const todayKey = dateKey(new Date());
+    const floorKey = dateKey(addDays(new Date(), -60));
+    const [vs, ve] = visibleRange();
+    let changed = ensureHabitOccurrences(floorKey, todayKey);
+    if (ensureHabitOccurrences(vs, ve)) changed = true;
+    if (changed) save();
+  }
+  function visibleRange() {
+    if (view === "week") { const w0 = startOfWeek(parseDate(currentDate)); return [dateKey(w0), dateKey(addDays(w0,6))]; }
+    if (view === "month") { const a = parseDate(currentDate); const w0 = startOfWeek(new Date(a.getFullYear(), a.getMonth(), 1)); return [dateKey(w0), dateKey(addDays(w0,41))]; }
+    return [currentDate, currentDate];
+  }
+
+  function addHabit() {
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast("Name the habit first (e.g. read 20 pages).", true); return; }
+    const days = [...document.querySelectorAll("#habitDays button.on")].map(b => +b.dataset.d).sort((a,b)=>a-b);
+    if (!days.length) { toast("Pick at least one day for this habit.", true); return; }
+    const duration = readDur();
+    const timeMode = $("habitTimeMode").value;
+    let time = null;
+    if (timeMode === "fixed") {
+      const t = $("habitTime").value;
+      if (!t) { toast("Pick the time for this habit.", true); return; }
+      time = toMin(t);
+      if (time < DAY_START || time + duration > DAY_END) { toast("That time is outside your calendar hours ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+").", true); return; }
+    }
+    const h = { id:uid(), title, days, timeMode, time, duration, createdAt:dateKey(new Date()) };
+    habits.push(h); saveHabits();
+    clearForm(); syncHabitRange(); save(); render();
+    toast("Habit added: \""+title+"\" — "+habitScheduleLabel(h)+".");
+  }
+
+  function toggleHabit(habitId, key) {
+    const k = key || dateKey(new Date());
+    const h = habits.find(x => x.id === habitId);
+    if (!h) return;
+    let occ = findHabitOcc(habitId, k);
+    if (!occ) { ensureHabitOccurrences(k, k); occ = findHabitOcc(habitId, k); }
+    if (!occ) { toast("That habit isn't planned for "+fmtDay(k)+".", true); return; }
+    occ.done = !occ.done;
+    save(); render();
+    const when = k === dateKey(new Date()) ? "today" : "on "+fmtDay(k);
+    toast(occ.done ? "Done — \""+h.title+"\" ticked off "+when+"." : "\""+h.title+"\" unticked "+when+".");
+  }
+
+  function removeHabit(habitId) {
+    const h = habits.find(x => x.id === habitId);
+    if (!h) return;
+    habits = habits.filter(x => x.id !== habitId);
+    saveHabits();
+    Object.keys(state).forEach(k => { state[k] = (state[k]||[]).filter(i => !(i.kind==="habit" && i.habitId===habitId)); });
+    save(); render();
+    toast("Habit \""+h.title+"\" removed, with every day it appeared on.");
+  }
+
+  /* ================= REMOVING & RESCHEDULING ================= */
+  function removeSingle(key, id, title) {
+    const victim = (state[key]||[]).find(x => x.id === id);
+    const remaining = victim && victim.parent
+      ? Object.keys(state).reduce((n,k) => n + (state[k]||[]).filter(x => x.parent===victim.parent).length, 0) - 1 : 0;
+    state[key] = (state[key]||[]).filter(x => x.id !== id);
+    save(); render();
+    toast("Removed \""+(title||"this")+"\"."+ (remaining > 0 ? " "+remaining+" step(s) of it are still in your plan." : ""));
+  }
+  function removeItem(id) {
+    const list = items();
+    const target = list.find(x => x.id === id);
+    if (!target) return;
+    const groupId = target.parent ? target.parent : id;
+    Object.keys(state).forEach(k => { state[k] = (state[k]||[]).filter(x => x.id !== groupId && x.parent !== groupId && x.id !== id); });
+    save(); render();
+  }
+  function removeWholeGroup(groupId) {
+    let n = 0;
+    Object.keys(state).forEach(k => { const before = (state[k]||[]).length; state[k] = (state[k]||[]).filter(x => x.parent !== groupId && x.id !== groupId); n += before - state[k].length; });
+    save(); render();
+    toast("Removed all "+n+" steps.");
+  }
+
+  function rescheduleAll() {
+    if (isPastDay(currentDate)) { toast("That day has already happened — go to today first.", true); return; }
+    const list = items();
+    const fixed = list.filter(i => i.kind !== "task");
+    const rank = i => (i.important?1:0) + (i.priority==="high"?1:0);
+    const tasks = list.filter(i => i.kind==="task").sort((a,b)=>rank(b)-rank(a));
+    tasks.forEach(t => t.time = null);
+    const busy = busyIntervals(fixed);
+    let failed = 0;
+    for (const t of tasks) {
+      const [tf, tt] = itemWindow(t);
+      let cursor = Math.max(tf, slotFloor(currentDate)), placed = null;
+      for (const b of busy) { if (cursor + t.duration <= b.start) { placed = cursor; break; } cursor = Math.max(cursor, b.end); }
+      if (placed == null && cursor + t.duration <= Math.min(tt, DAY_END)) placed = cursor;
+      if (placed != null) {
+        t.time = placed;
+        busy.push({ start:placed, end:placed+t.duration });
+        busy.sort((a,b)=>a.start-b.start);
+      } else failed++;
+    }
+    save(); render();
+    toast(failed ? failed+" to-do(s) didn't fit — the day is too full. Move something or make it shorter." : "Day rearranged — fixed things stayed put, everything else found new gaps.", failed > 0);
+  }
+
+  function packWeek() {
+    if (!weekPool.length) { toast("Nothing is waiting for later this week."); return; }
+    const todayKey = dateKey(new Date());
+    if (dateKey(addDays(startOfWeek(parseDate(currentDate)), 6)) < todayKey) { toast("You're looking at a past week — go to this week first.", true); return; }
+    const rank = i => (i.important?1:0) + (i.priority==="high"?1:0);
+    const sorted = weekPool.slice().sort((a,b)=>rank(b)-rank(a));
+    const placedIds = new Set();
+    let failed = 0;
+    for (const t of sorted) {
+      for (let d = 0; d < 7; d++) {
+        const key = dateKey(addDays(startOfWeek(parseDate(currentDate)), d));
+        if (key < todayKey) continue;
+        const [pf, pt] = itemWindow(t);
+        const slot = findFreeSlot(itemsFor(key), t.duration, Math.max(pf, slotFloor(key)), pt);
+        if (slot != null) {
+          itemsFor(key).push({ id:t.id, title:t.title, duration:t.duration, time:slot,
+            kind:"task", done:false, important:t.important, priority:t.priority, parent:null, slotFrom:pf, slotTo:pt });
+          placedIds.add(t.id);
+          break;
+        }
+      }
+      if (!placedIds.has(t.id)) failed++;
+    }
+    weekPool = weekPool.filter(t => !placedIds.has(t.id));
+    savePool(); save(); render();
+    toast(placedIds.size+" placed across the week"+(failed ? ", "+failed+" didn't fit — try making them shorter." : "."), failed > 0);
+  }
+
+  /* ===== CHUNK 4 OF 5 (continues the same script) ===== */
+
+  /* ================= ENTRY-TYPE FORM ================= */
+  function applyEntryType() {
+    const isEvent = entryType === "event";
+    const isDue   = entryType === "deadline";
+    const isHabit = entryType === "habit";
+    document.querySelectorAll("#typeSwitch button").forEach(b => {
+      const on = b.dataset.type === entryType;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    $("windowRow").style.display         = (!isEvent && !isDue && !isHabit && advanced) ? "" : "none";
+    $("customWindowRow").style.display   = (!isEvent && !isDue && !isHabit && advanced && $("taskWindow").value === "custom") ? "" : "none";
+    $("eventTypeRow").style.display      = isEvent ? "" : "none";
+    $("deadlineRow").style.display       = isDue ? "" : "none";
+    $("habitDaysRow").style.display      = isHabit ? "" : "none";
+    $("habitTimeRow").style.display      = isHabit ? "" : "none";
+    $("habitTime").style.display         = (isHabit && $("habitTimeMode").value === "fixed") ? "" : "none";
+    $("fixedTimeRow").style.display      = isDue || isHabit ? "none" : "";
+    $("advBtn").style.display = entryType === "task" ? "" : "none";
+    $("addBtn").textContent =
+      isEvent ? "Add event" : isDue ? "Set deadline" : isHabit ? "Add habit" : "Add to my day";
+    $("titleLabel").textContent =
+      isEvent ? "What's happening?" : isDue ? "What's due?" : isHabit ? "What do you want to repeat?" : "What needs doing?";
+    $("taskTitle").placeholder = isEvent ? "e.g. dentist, team meeting"
+      : isDue ? "e.g. history essay due"
+      : isHabit ? "e.g. read 20 pages"
+      : "e.g. write report";
+    $("estimateBtn").disabled  = isEvent;
+    $("breakdownBtn").disabled = isEvent || isHabit;
+    $("breakdownBtn").textContent = isDue ? "\u25B3 Spread over the days before" : "\u270E Split it up";
+    if (isDue) $("deadlineDate").value = $("deadlineDate").value || currentDate;
+  }
+  function setEntryType(t) {
+    entryType = t;
+    applyEntryType();
+    $("taskTitle").focus();
+  }
+  function cycleEntryType() {
+    const order = ["task", "event", "deadline", "habit"];
+    setEntryType(order[(order.indexOf(entryType) + 1) % order.length]);
+  }
+
+  /* ================= BREAKDOWN DIALOG ================= */
+  function openBreakdown(parentItem) {
+    const title = parentItem ? parentItem.title : $("taskTitle").value.trim();
+    if (!title) { toast("Type the task first, then press Split it up.", true); return; }
+    const dtext = $("taskDetails").value.trim();
+    const fullTitle = dtext ? title + " — " + dtext : title;
+    modalCtx = { parentId: parentItem ? parentItem.id : null, title: title, deadline: null };
+    $("modalTitle").textContent = "Split: " + shortTitle(title, 40);
+    $("modalSub").textContent = "Change the steps and times if you like, then press the button below and I'll fit them into your plan.";
+    $("modalConfirm").textContent = "Put steps in my plan";
+    renderModalSteps(buildBreakdown(fullTitle, dtext).steps);
+    $("modalBackdrop").classList.add("open");
+  }
+
+  function renderModalSteps(steps) {
+    const wrap = $("modalSteps");
+    wrap.innerHTML = "";
+    steps.forEach((s, idx) => {
+      const row = document.createElement("div");
+      row.className = "step-row";
+      row.innerHTML =
+        '<span class="num">' + String(idx+1).padStart(2,"0") + '</span>' +
+        '<input type="text" class="step-text" value="' + esc(s.text) + '" aria-label="Step ' + (idx+1) + '">' +
+        '<input type="number" class="step-h" min="0" max="24" step="1" value="' + Math.floor(s.minutes/60) + '" aria-label="Hours">' +
+        '<input type="number" class="step-m" min="0" max="55" step="5" value="' + (s.minutes%60) + '" aria-label="Minutes">';
+      const tools = document.createElement("div");
+      tools.innerHTML =
+        '<button type="button" class="small-btn up" aria-label="Move this step up">&#9650;</button>' +
+        '<button type="button" class="small-btn down" aria-label="Move this step down">&#9660;</button>' +
+        '<button type="button" class="small-btn ins" aria-label="Add a step after this one">+</button>';
+      row.appendChild(tools);
+      tools.querySelector(".up").onclick   = () => moveStep(idx, -1);
+      tools.querySelector(".down").onclick = () => moveStep(idx, 1);
+      tools.querySelector(".ins").onclick  = () => insertStepAfter(idx);
+      wrap.appendChild(row);
+    });
+    updateModalTotal();
+  }
+
+  function updateModalTotal() {
+    const total = [...document.querySelectorAll("#modalSteps .step-row")].reduce((s, r) =>
+      s + (+r.querySelector(".step-h").value || 0) * 60 + (+r.querySelector(".step-m").value || 0), 0);
+    let line = "Altogether: " + fmtDur(total);
+    if (modalCtx && modalCtx.deadline) line += " — everything must be done before " + fmtDue(modalCtx.deadline.date, modalCtx.deadline.time);
+    $("modalTotal").textContent = line;
+  }
+
+  function currentStepRows() {
+    return [...document.querySelectorAll("#modalSteps .step-row")].map(r => ({
+      text: r.querySelector(".step-text").value,
+      minutes: (+r.querySelector(".step-h").value || 0) * 60 + (+r.querySelector(".step-m").value || 0),
+    }));
+  }
+  function moveStep(idx, dir) {
+    const rows = currentStepRows();
+    const j = idx + dir;
+    if (j < 0 || j >= rows.length) return;
+    [rows[idx], rows[j]] = [rows[j], rows[idx]];
+    renderModalSteps(rows);
+  }
+  function insertStepAfter(idx) {
+    const rows = currentStepRows();
+    rows.splice(idx + 1, 0, { text: "", minutes: 30 });
+    renderModalSteps(rows);
+    const inputs = document.querySelectorAll("#modalSteps .step-text");
+    if (inputs[idx + 1]) inputs[idx + 1].focus();
+  }
+
+  function confirmModalSteps() {
+    const rows = currentStepRows().map(r => ({ text: r.text.trim(), minutes: r.minutes })).filter(r => r.text);
+    if (!rows.length) { toast("There are no steps to add.", true); return; }
+
+    if (modalCtx && modalCtx.deadline) {
+      const due = modalCtx.deadline;
+      const deadlineId = modalCtx.parentId;
+      const doneIdx = new Set(planStepsFor(deadlineId).filter(x => x.item.done).map(x => x.item.stepIdx ?? -1));
+      Object.keys(state).forEach(k => { state[k] = (state[k]||[]).filter(i => !(i.parent === deadlineId && !i.done)); });
+      const placed = planStepsBeforeDeadline(rows, due.date, due.time, doneIdx, modalCtx.winFrom, modalCtx.winTo);
+      const kept = placed.filter(p => p === "kept").length;
+      const ok = placed.filter(p => p && p !== "kept").length;
+      const wanted = rows.length - kept;
+      save(); render();
+      $("modalBackdrop").classList.remove("open");
+      if (wanted === 0) { toast("All " + rows.length + " steps were already done — nothing to re-plan."); return; }
+      toast(ok + "/" + wanted + " steps scheduled before " + fmtDue(due.date, due.time) +
+        (ok < wanted ? " — " + (wanted - ok) + " didn't fit. Try shorter times or clear some space." : ".") +
+        (kept ? " (" + kept + " finished step(s) kept.)" : ""), ok < wanted);
+      return;
+    }
+
+    if (isPastDay(currentDate)) { toast("Go to today first — steps can't be planned on a day that's gone.", true); return; }
+    if (modalCtx.parentId) removeItem(modalCtx.parentId);
+    const parentRef = modalCtx.parentId || uid();
+    let unscheduled = 0;
+    rows.forEach((r, idx) => {
+      const [bwf, bwt] = currentWindowChoice();
+      const slot = findFreeSlot(items(), r.minutes, Math.max(bwf, slotFloor(currentDate)), bwt);
+      if (slot == null) unscheduled++;
+      items().push({ id: uid(), title: "[" + (idx+1) + "/" + rows.length + "] " + modalCtx.title + ": " + r.text,
+        duration: r.minutes, time: slot, kind: "task", done: false, important: false, parent: parentRef, stepText: r.text, stepIdx: idx });
+    });
+    save(); render();
+    $("modalBackdrop").classList.remove("open");
+    if (!modalCtx.parentId) clearForm();
+    toast(rows.length + " steps added" + (unscheduled ? " — " + unscheduled + " didn't fit today. Press Rearrange the day or give them shorter times." : " and fitted into your free gaps."), unscheduled > 0);
+  }
+
+  /* ================= EDITING ================= */
+  function openEdit(item, key) {
+    const k = key || currentDate;
+    editId = item.id; editKey = k;
+    if (item.kind === "event") setEntryType("event");
+    else if (isDeadline(item)) setEntryType("deadline");
+    else setEntryType("task");
+    $("taskTitle").value = item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0] === item.title ? item.title : item.title;
+    $("taskTitle").value = item.title;
+    $("taskDetails").value = item.details || "";
+    $("durHours").value = Math.floor(item.duration / 60);
+    $("durMinutes").value = item.duration % 60;
+    $("taskTime").value = item.time != null ? fmtTime(item.time) : "";
+    if (isDeadline(item)) { $("deadlineDate").value = item.dueDate; $("deadlineTime").value = fmtTime(item.dueTime); }
+    if (item.kind === "event" && item.eventType) {
+      $("eventType").value = item.eventType;
+      $("eventCustomLabel").style.display = item.eventType === "custom" ? "" : "none";
+      $("eventCustomLabel").value = item.customLabel || "";
+    }
+    if (item.important) { /* star shown in list */ }
+    $("addBtn").textContent = "Save changes";
+    $("taskTitle").focus();
+  }
+
+  function saveEdit() {
+    const list = state[editKey] || [];
+    const item = list.find(x => x.id === editId);
+    if (!item) { cancelEdit(); return; }
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast("Give it a name first.", true); return; }
+    const duration = readDur();
+    const details = $("taskDetails").value.trim();
+    item.title = title; item.details = details; item.duration = duration;
+
+    if (isDeadline(item)) {
+      const date = $("deadlineDate").value, timeStr = $("deadlineTime").value;
+      if (!date || !timeStr) { toast("Pick the day and time it's due.", true); return; }
+      item.dueDate = date; item.dueTime = toMin(timeStr);
+      if (editKey !== date) {  // moved to another day
+        state[editKey] = list.filter(x => x.id !== editId);
+        itemsFor(date).push(item);
+      }
+    } else {
+      const t = $("taskTime").value;
+      if (t) {
+        const start = toMin(t);
+        if (overlaps(state[editKey], start, start + duration, item.id)) { toast("That time is already taken by something else.", true); return; }
+        item.time = start;
+        if (item.kind === "task") { item.kind = "appt"; delete item.slotFrom; delete item.slotTo; }
+      } else {
+        item.time = null;
+        if (item.kind === "appt") item.kind = "task";
+        const [wf, wt] = currentWindowChoice();
+        item.slotFrom = wf; item.slotTo = wt;
+      }
+      if (item.kind === "event") { item.eventType = $("eventType").value; item.customLabel = $("eventCustomLabel").value.trim(); }
+    }
+
+    // Group edit: apply title/details/window to every step of a split task.
+    if (editGroupId) {
+      const groupId = editGroupId;
+      Object.keys(state).forEach(k => (state[k]||[]).forEach(x => {
+        if (x.parent !== groupId) return;
+        x.title = title; x.details = details; x.duration = duration;
+        if (item.slotFrom != null) { x.slotFrom = item.slotFrom; x.slotTo = item.slotTo; }
+      }));
+      editGroupId = null;
+    }
+
+    cancelEdit(); save(); render();
+    toast("Changes saved.");
+  }
+
+  function cancelEdit() {
+    editId = null; editKey = null; editGroupId = null;
+    clearForm();
+    applyEntryType();
+  }
+
+  /* Step-group popups (simplified, no floating bubble) */
+  function chooseAction(title, options) {
+    return new Promise(resolve => {
+      const bd = $("choiceBackdrop");
+      $("choiceTitle").textContent = title;
+      const wrap = $("choiceOpts");
+      wrap.innerHTML = "";
+      options.forEach(o => {
+        const b = document.createElement("button");
+        b.innerHTML = "<span>" + esc(o.label) + "</span>" +
+          (o.sub ? '<span class="sub">' + esc(o.sub) + "</span>" : "");
+        b.onclick = () => { bd.classList.remove("open"); resolve(o.value); };
+        wrap.appendChild(b);
+      });
+      bd.onclick = e => { if (e.target === bd) { bd.classList.remove("open"); resolve(null); } };
+      bd.classList.add("open");
+    });
+  }
+  function siblingCount(item) {
+    return Object.keys(state).reduce((n, k) =>
+      n + (state[k]||[]).filter(x => x.parent === item.parent).length, 0);
+  }
+  async function confirmSeriesDelete(item, key) {
+    const sibs = item.parent ? siblingCount(item) : 0;
+    if (sibs < 2) { removeSingle(key, item.id, item.title); return; }
+    const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0], 34);
+    const choice = await chooseAction('Delete: "' + name + '"', [
+      { label: "Delete just this step", sub: "the other " + (sibs - 1) + " step(s) stay in your plan", value: "one" },
+      { label: "Delete the whole task", sub: "all " + sibs + " steps, on every day", value: "all" },
+      { label: "Never mind", sub: "keep everything as it is", value: "cancel" },
+    ]);
+    if (choice === "one") removeSingle(key, item.id, item.title);
+    else if (choice === "all") removeWholeGroup(item.parent);
+  }
+  async function confirmSeriesEdit(item, key) {
+    const sibs = item.parent ? siblingCount(item) : 0;
+    if (sibs < 2) { openEdit(item, key); return; }
+    const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0], 34);
+    const choice = await chooseAction('"' + name + '" is split into ' + sibs + ' steps', [
+      { label: "Edit just this step", sub: "only this one changes", value: "one" },
+      { label: "Edit the whole task", sub: "changes all " + sibs + " steps", value: "all" },
+      { label: "Never mind", sub: "close this window", value: "cancel" },
+    ]);
+    if (choice === "one") openEdit(item, key);
+    else if (choice === "all") openGroupEdit(item.parent, key);
+  }
+  function openGroupEdit(groupId, key) {
+    const found = planStepsFor(groupId)[0];
+    if (!found) { toast("Couldn't find the other steps.", true); return; }
+    editGroupId = groupId;
+    openEdit(found.item, key || found.key);
+  }
+
+  /* ================= DRAG TO MOVE (day view) ================= */
+  let drag = null;
+  function onBlockPointerDown(e, item) {
+    if (e.target.closest(".b-del")) return;
+    if (e.button !== 0 || view !== "day") return;
+    if (isPastDay(currentDate)) { toast("Things can't be moved on a day that's gone.", true); return; }
+    drag = { item, startY: e.clientY, origTime: item.time, moved: false };
+    e.preventDefault();
+  }
+  window.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dy = e.clientY - drag.startY;
+    if (Math.abs(dy) < 8) return;
+    drag.moved = true;
+    let newTime = drag.origTime + Math.round(dy / PX_DAY);
+    newTime = Math.max(DAY_START, Math.min(DAY_END - drag.item.duration, newTime));
+    const el = document.querySelector('.block[data-id="' + drag.item.id + '"]');
+    if (el) {
+      el.style.top = ((newTime - DAY_START) * PX_DAY) + "px";
+      const bt = el.querySelector(".b-time");
+      if (bt) bt.textContent = fmtTime(newTime) + " – " + fmtTime(newTime + drag.item.duration);
+    }
+    drag.newTime = newTime;
+  });
+  window.addEventListener("pointerup", () => {
+    if (!drag) { drag = null; return; }
+    if (drag.moved && drag.newTime != null && drag.newTime !== drag.origTime) {
+      const item = drag.item;
+      if (overlaps(items(), drag.newTime, drag.newTime + item.duration, item.id)) {
+        toast("That spot is taken. Try another gap, or press Rearrange the day to shuffle things around.", true);
+      } else {
+        item.time = drag.newTime;
+        toast("Moved \"" + shortTitle(item.title) + "\" to " + fmtTime(item.time) + ".");
+        save();
+      }
+    } else if (!drag.moved) {
+      confirmSeriesEdit(drag.item, currentDate)
+    }
+    drag = null;
+    render();
+  });
+
+  /* Tap on empty grid = pick that time */
+  function onGridClick(e) {
+    if (e.target.closest(".block") || e.target.closest(".deadline-pin")) return;
+    const col = document.getElementById("eventsCol");
+    if (!col) return;
+    const rect = col.getBoundingClientRect();
+    const mins = DAY_START + Math.round((e.clientY - rect.top) / PX_DAY);
+    const snapped = Math.max(DAY_START, Math.min(DAY_END - 30, Math.floor(mins / GRID_STEP) * GRID_STEP));
+    if (entryType === "habit") {
+      $("habitTimeMode").value = "fixed";
+      $("habitTime").value = fmtTime(snapped);
+      $("habitTime").style.display = "";
+      $("taskTitle").focus();
+      toast("Time set to " + fmtTime(snapped) + " — name the habit, then press Add habit.");
+      return;
+    }
+    if (entryType === "deadline") {
+      $("deadlineTime").value = fmtTime(snapped);
+      $("taskTitle").focus();
+      toast("Due time set to " + fmtTime(snapped) + " — name it, then press Set deadline.");
+      return;
+    }
+    $("taskTime").value = fmtTime(snapped);
+    $("taskTitle").focus();
+    toast("Start time set to " + fmtTime(snapped) + " — name it, then press Add.");
+  }
+
+  /* ================= SIDEBAR: TODAY'S LIST ================= */
+  function renderTodo() {
+    const list = items();
+    const wrap = $("todoList");
+    wrap.innerHTML = "";
+    const sorted = list.slice().sort((a,b) => effMin(a) - effMin(b));
+    const undone = sorted.filter(i => !i.done);
+    const done = sorted.filter(i => i.done);
+
+    undone.forEach(i => wrap.appendChild(todoRow(i)));
+    if (!undone.length && !done.length) {
+      const empty = document.createElement("p");
+      empty.className = "hint";
+      empty.textContent = "Nothing planned yet. Add something above.";
+      wrap.appendChild(empty);
+    }
+    done.forEach(i => wrap.appendChild(todoRow(i)));
+  }
+
+  function todoRow(i) {
+    const row = document.createElement("div");
+    row.className = "todo-item" + (i.done ? " done" : "");
+    const kindName = { task:"To-do", appt:"Fixed time", event:"Event", habit:"Habit", deadline:"Deadline" }[i.kind] || "";
+    const when = i.kind === "deadline"
+      ? "due " + fmtTime(i.dueTime)
+      : i.time != null ? fmtTime(i.time) + " – " + fmtTime(i.time + i.duration)
+      : "no time yet — press Rearrange the day";
+    const star = document.createElement("button");
+    star.className = "small-btn" + (i.important ? " star-on" : "");
+    star.textContent = i.important ? "\u2605" : "\u2606";
+    star.setAttribute("aria-label", i.important ? "Important (press to make it normal)" : "Mark as important");
+    star.onclick = () => { i.important = !i.important; save(); render(); };
+
+    const tick = document.createElement("button");
+    tick.className = "tick";
+    tick.textContent = i.done ? "\u2713" : "";
+    tick.setAttribute("aria-pressed", i.done ? "true" : "false");
+    tick.setAttribute("aria-label", i.done ? "Not done" : "Done");
+    tick.onclick = () => {
+      if (i.kind === "habit") { toggleHabit(i.habitId, currentDate); return; }
+      i.done = !i.done;
+      if (i.done && i.kind === "task" && i.parent) {
+        const all = planStepsFor(i.parent);
+        if (all.length && all.every(x => x.item.done)) toast("Every step of \"" + shortTitle(i.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0]) + "\" is done. Well done!");
+      }
+      save(); render();
+    };
+
+    const main = document.createElement("div");
+    main.className = "main";
+    main.tabIndex = 0;
+    main.setAttribute("role", "button");
+    main.setAttribute("aria-label", "Edit " + shortTitle(i.title, 40));
+    main.innerHTML =
+      '<div class="title">' + esc(shortTitle(i.title, 64)) + '</div>' +
+      '<div class="meta">' + kindName + " · " + when + '</div>' +
+      (i.parent ? '<div class="meta">1 step of a split task</div>' : '');
+    main.onclick = () => { confirmSeriesEdit(i, currentDate); };
+    main.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); main.onclick(); } };
+
+    const del = document.createElement("button");
+    del.className = "small-btn";
+    del.textContent = "\u2715";
+    del.setAttribute("aria-label", "Remove " + shortTitle(i.title, 30));
+    del.onclick = () => { confirmSeriesDelete(i, currentDate); };
+
+    row.append(tick, main, star, del);
+    return row;
+  }
+
+  /* ================= SIDEBAR: POOL + HABITS ================= */
+  function renderPool() {
+    const panel = $("poolPanel"), listEl = $("poolList");
+    if (!weekPool.length) { panel.style.display = "none"; listEl.innerHTML = ""; $("poolCount").textContent = ""; return; }
+    panel.style.display = "";
+    $("poolCount").textContent = weekPool.length;
+    listEl.innerHTML = "";
+    weekPool.forEach(t => {
+      const row = document.createElement("div");
+      row.className = "todo-item";
+      row.innerHTML =
+        '<div class="main"><div class="title">' + esc(shortTitle(t.title)) + '</div>' +
+        '<div class="meta">' + fmtDur(t.duration) + (t.important ? " · important" : "") + '</div></div>';
+      const del = document.createElement("button");
+      del.className = "small-btn";
+      del.textContent = "\u2715";
+      del.setAttribute("aria-label", "Take it back out of the waiting list");
+      del.onclick = () => { weekPool = weekPool.filter(x => x.id !== t.id); savePool(); render(); };
+      row.appendChild(del);
+      listEl.appendChild(row);
+    });
+  }
+
+  function renderHabits() {
+    const panel = $("habitsPanel"), listEl = $("habitsList");
+    if (!habits.length) { panel.style.display = "none"; listEl.innerHTML = ""; $("habitsCount").textContent = ""; return; }
+    panel.style.display = "";
+    const todayKey = dateKey(new Date());
+    const dueToday = habits.filter(h => habitApplies(h, todayKey));
+    const doneToday = dueToday.filter(h => { const o = findHabitOcc(h.id, todayKey); return o && o.done; }).length;
+    $("habitsCount").textContent = dueToday.length ? doneToday + "/" + dueToday.length + " today" : "none today";
+    listEl.innerHTML = "";
+    habits.forEach(h => {
+      const todayApplies = habitApplies(h, todayKey);
+      const occ = findHabitOcc(h.id, todayKey);
+      const streak = habitStreak(h);
+      const row = document.createElement("div");
+      row.className = "habit-row" + (occ && occ.done ? " done" : "");
+      const tick = document.createElement("button");
+      tick.className = "tick";
+      tick.textContent = occ && occ.done ? "\u2713" : "";
+      tick.setAttribute("aria-pressed", occ && occ.done ? "true" : "false");
+      tick.setAttribute("aria-label", todayApplies ? (occ && occ.done ? "Untick for today" : "Tick off for today") : "Not planned for today");
+      tick.disabled = !todayApplies;
+      if (todayApplies) tick.onclick = () => toggleHabit(h.id);
+      const body = document.createElement("div");
+      body.innerHTML =
+        '<div class="title">' + esc(h.title) + '</div>' +
+        '<div class="meta">' + esc(habitScheduleLabel(h)) +
+          (streak ? " · " + streak + " day" + (streak === 1 ? "" : "s") + " in a row" : "") + '</div>' +
+        '<div class="habit-dots">' + weekDots(h) + '</div>';
+      const del = document.createElement("button");
+      del.className = "small-btn";
+      del.textContent = "\u2715";
+      del.setAttribute("aria-label", "Remove this habit everywhere");
+      del.onclick = () => removeHabit(h.id);
+      row.append(tick, body, del);
+      listEl.appendChild(row);
+    });
+  }
+
+  /* ================= RENDER: DAY ================= */
+  function renderDay(head, outer) {
+    head.innerHTML = "";
+    head.style.gridTemplateColumns = "64px 1fr";
+    const scroller = document.createElement("div");
+    scroller.style.display = "grid";
+    scroller.style.gridTemplateColumns = "64px 1fr";
+
+    const hoursCol = document.createElement("div");
+    hoursCol.className = "hours-col";
+    for (let m = DAY_START; m < DAY_END; m += 60) {
+      const h = document.createElement("div");
+      h.style.height = (60 * PX_DAY) + "px";
+      h.textContent = fmtTime(m % 1440);
+      hoursCol.appendChild(h);
+    }
+    scroller.appendChild(hoursCol);
+
+    const col = document.createElement("div");
+    col.className = "events-col";
+    col.id = "eventsCol";
+    col.style.height = ((DAY_END - DAY_START) * PX_DAY) + "px";
+    col.onclick = onGridClick;
+
+    const todayKey = dateKey(new Date());
+    const nowM = new Date().getHours() * 60 + new Date().getMinutes();
+    if (isToday(currentDate) && nowM >= DAY_START && nowM <= DAY_END) {
+      const line = document.createElement("div");
+      line.className = "now-line";
+      line.style.top = ((nowM - DAY_START) * PX_DAY) + "px";
+      col.appendChild(line);
+    }
+
+    items().filter(i => i.time != null && !isDeadline(i)).forEach(i => col.appendChild(dayBlock(i)));
+    items().filter(isDeadline).forEach(d => {
+      if (d.dueDate !== currentDate) return;
+      const pin = document.createElement("button");
+      pin.className = "deadline-pin";
+      pin.style.top = ((Math.min(Math.max(d.dueTime, DAY_START), DAY_END - 8) - DAY_START) * PX_DAY) + "px";
+      pin.innerHTML = '<b>\u23F0 Due ' + fmtTime(d.dueTime) + "</b> — " + esc(shortTitle(d.title)) +
+        '<span class="meta" style="display:block;font-size:15px">tap to spread the work over the days before</span>';
+      pin.onclick = ev => { ev.stopPropagation(); openDeadlinePlan(d); };
+      const del = document.createElement("button");
+      del.className = "b-del";
+      del.style.position = "absolute"; del.style.top = "6px"; del.style.right = "6px";
+      del.textContent = "\u2715";
+      del.setAttribute("aria-label", "Remove this deadline");
+      del.onclick = ev => { ev.stopPropagation(); confirmSeriesDelete(d, currentDate); };
+      pin.appendChild(del);
+      col.appendChild(pin);
+    });
+
+    scroller.appendChild(col);
+    outer.innerHTML = "";
+    outer.appendChild(scroller);
+    // Start scrolled to around now (or the morning).
+    outer.scrollTop = Math.max(0, (slotFloor(currentDate) - DAY_START - 60) * PX_DAY);
+  }
+
+  function dayBlock(i) {
+    const b = document.createElement("div");
+    b.className = "block " + ({ task:"b-task", appt:"b-evt", event:"b-evt", habit:"b-hab" }[i.kind] || "b-task") + (i.done ? " b-done" : "");
+    b.dataset.id = i.id;
+    b.style.top = ((i.time - DAY_START) * PX_DAY) + "px";
+    b.style.height = Math.max(28, i.duration * PX_DAY - 4) + "px";
+    const cls = { task:"", appt:"Fixed time", event:eventLabel(i), habit:"Habit" }[i.kind] || "";
+    b.innerHTML =
+      '<div class="b-time">' + fmtTime(i.time) + " – " + fmtTime(i.time + i.duration) +
+        (cls ? " · " + esc(cls) : "") + (i.important ? " · \u2605 important" : "") + '</div>' +
+      '<div class="b-title">' + esc(shortTitle(i.title)) + '</div>';
+    const del = document.createElement("button");
+    del.className = "b-del";
+    del.textContent = "\u2715";
+    del.setAttribute("aria-label", "Remove " + shortTitle(i.title, 30));
+    del.onclick = ev => { ev.stopPropagation(); confirmSeriesDelete(i, currentDate); };
+    b.appendChild(del);
+    b.addEventListener("pointerdown", e => onBlockPointerDown(e, i));
+    return b;
+  }
+  function eventLabel(i) {
+    if (!i || !i.eventType) return "Event";
+    const labels = { meeting:"Meeting", class:"Class", gathering:"Gathering", appointment:"Appointment" };
+    return i.eventType === "custom" ? (i.customLabel || "Event") : (labels[i.eventType] || "Event");
+  }
+
+  /* ================= RENDER: WEEK ================= */
+  function renderWeek(head, outer) {
+    head.innerHTML = "";
+    head.style.gridTemplateColumns = "64px repeat(7,1fr)";
+    const gutter = document.createElement("div"); head.appendChild(gutter);
+    const w0 = startOfWeek(parseDate(currentDate));
+    dayNames.forEach((dn, k) => {
+      const key = dateKey(addDays(w0, k));
+      const h = document.createElement("div");
+      h.className = isToday(key) ? "this-week" : "";
+      h.textContent = dn + " " + parseDate(key).getDate();
+      h.style.cursor = "pointer";
+      h.title = "Go to " + fmtDay(key);
+      h.onclick = () => { currentDate = key; view = "day"; setViewButtons(); render(); };
+      head.appendChild(h);
+    });
+
+    const scroller = document.createElement("div");
+    scroller.style.display = "grid";
+    scroller.style.gridTemplateColumns = "64px 1fr";
+    const hoursCol = document.createElement("div");
+    hoursCol.className = "hours-col";
+    for (let m = DAY_START; m < DAY_END; m += 60) {
+      const h = document.createElement("div");
+      h.style.height = (60 * PX_WEEK) + "px";
+      h.textContent = fmtTime(m % 1440);
+      hoursCol.appendChild(h);
+    }
+    scroller.appendChild(hoursCol);
+
+    const row = document.createElement("div");
+    row.style.display = "grid";
+    row.style.gridTemplateColumns = "repeat(7,1fr)";
+    for (let k = 0; k < 7; k++) {
+      const key = dateKey(addDays(w0, k));
+      const day = document.createElement("div");
+      day.className = "wk-day";
+      const inner = document.createElement("div");
+      inner.className = "events-col";
+      inner.style.height = ((DAY_END - DAY_START) * PX_WEEK) + "px";
+      itemsFor(key).filter(i => i.time != null && !isDeadline(i)).forEach(i => {
+        const b = document.createElement("div");
+        b.className = "block " + ({ task:"b-task", appt:"b-evt", event:"b-evt", habit:"b-hab" }[i.kind] || "b-task") + (i.done ? " b-done" : "");
+        b.style.top = ((i.time - DAY_START) * PX_WEEK) + "px";
+        b.style.height = Math.max(22, i.duration * PX_WEEK - 3) + "px";
+        b.innerHTML = '<div class="b-title">' + esc(shortTitle(i.title, 20)) + '</div>';
+        b.title = fmtTime(i.time) + " – " + fmtTime(i.time + i.duration) + " — " + i.title;
+        b.onclick = ev => { ev.stopPropagation(); confirmSeriesEdit(i, key); };
+        inner.appendChild(b);
+      });
+      day.appendChild(inner);
+      row.appendChild(day);
+    }
+    scroller.appendChild(row);
+    outer.innerHTML = "";
+    outer.appendChild(scroller);
+  }
+
+  /* ================= RENDER: MONTH ================= */
+  function renderMonth(head, outer) {
+    head.innerHTML = "";
+    head.style.gridTemplateColumns = "64px repeat(7,1fr)";
+    const gutter = document.createElement("div"); head.appendChild(gutter);
+    dayNames.forEach(dn => {
+      const h = document.createElement("div");
+      h.textContent = dn;
+      head.appendChild(h);
+    });
+    const anchor = parseDate(currentDate);
+    const y = anchor.getFullYear(), mo = anchor.getMonth();
+    const first = new Date(y, mo, 1);
+    const w0 = startOfWeek(first);
+    const todayKey = dateKey(new Date());
+
+    const grid = document.createElement("div");
+    grid.className = "month-grid";
+    for (let k = 0; k < 42; k++) {
+      const d = new Date(w0); d.setDate(d.getDate() + k);
+      const key = dateKey(d);
+      const out = d.getMonth() !== mo;
+      const cell = document.createElement("div");
+      cell.className = "month-cell" + (out ? " out" : "") + (key === todayKey ? " today" : "") + (key === currentDate ? " selected" : "");
+
+      const dateEl = document.createElement("div");
+      dateEl.className = "m-date";
+      dateEl.textContent = d.getDate();
+      cell.appendChild(dateEl);
+
+      const dayItems = itemsFor(key);
+      const dues = dayItems.filter(isDeadline).sort((a,b)=>a.dueTime-b.dueTime);
+      const timed = dayItems.filter(i => i.time != null && !isDeadline(i)).sort((a,b)=>a.time-b.time);
+      const unsched = dayItems.filter(i => i.time == null && !isDeadline(i) && i.kind !== "habit").length;
+      const MAX = 4;
+      let shown = 0;
+      dues.forEach(i => {
+        if (shown >= MAX) return;
+        const chip = document.createElement("div");
+        chip.className = "m-chip c-dl" + (i.done ? " b-done" : "");
+        chip.textContent = "\u23F0 " + fmtTime(i.dueTime) + " " + shortTitle(i.title, 18);
+        cell.appendChild(chip);
+        shown++;
+      });
+      timed.forEach(i => {
+        if (shown >= MAX) return;
+        const chip = document.createElement("div");
+        chip.className = "m-chip " + ({ task:"c-task", appt:"c-evt", event:"c-evt", habit:"c-hab" }[i.kind] || "c-task") + (i.done ? " b-done" : "");
+        chip.textContent = (i.kind === "habit" ? "\u21BB " : fmtTime(i.time) + " ") + shortTitle(i.title, 18);
+        if (i.kind === "habit") {
+          chip.title = "Habit — tap to tick off";
+          chip.onclick = ev => { ev.stopPropagation(); toggleHabit(i.habitId, key); };
+        } else {
+          chip.title = fmtTime(i.time) + " — tap to edit";
+          chip.onclick = ev => { ev.stopPropagation(); confirmSeriesEdit(i, key); };
+        }
+        cell.appendChild(chip);
+        shown++;
+      });
+      const more = (timed.length + dues.length) - shown + unsched;
+      if (more > 0) {
+        const mEl = document.createElement("div");
+        mEl.className = "m-more";
+        mEl.textContent = "+" + more + " more";
+        cell.appendChild(mEl);
+      }
+
+      cell.onclick = () => { currentDate = key; view = "day"; setViewButtons(); render(); };
+      grid.appendChild(cell);
+    }
+    outer.innerHTML = "";
+    outer.appendChild(grid);
+  }
+
+  /* ================= RENDER ROOT ================= */
+  function render() {
+    syncHabitRange();
+    // Sidebar heading
+    $("dayHeading").textContent = isToday(currentDate) ? "My day" : "Things for " + fmtDay(currentDate);
+    // Toolbar date label
+    const d = parseDate(currentDate);
+    $("dateLabel").textContent =
+      view === "day" ? d.toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" })
+      : view === "week" ? "Week of " + d.toLocaleDateString(undefined, { day:"numeric", month:"long" })
+      : d.toLocaleDateString(undefined, { month:"long", year:"numeric" });
+    renderTodo(); renderPool(); renderHabits();
+    const head = $("calHead"), outer = $("calScroll");
+    if (view === "day") renderDay(head, outer);
+    else if (view === "week") renderWeek(head, outer);
+    else renderMonth(head, outer);
+  }
+
+  function setViewButtons() {
+    [["vDay","day"],["vWeek","week"],["vMonth","month"]].forEach(([id,v]) => {
+      const b = $(id);
+      b.classList.toggle("active", view === v);
+      b.setAttribute("aria-pressed", view === v ? "true" : "false");
+    });
+  }
+
+  function shift(dir) {
+    const d = parseDate(currentDate);
+    if (view === "day")   d.setDate(d.getDate() + dir);
+    if (view === "week")  d.setDate(d.getDate() + dir * 7);
+    if (view === "month") d.setMonth(d.getMonth() + dir);
+    currentDate = dateKey(d);
+    render();
+  }
+
+  /* ================= LAST-SAVED INFO ================= */
+  function fmtWhen(iso) {
+    try {
+      const d = new Date(iso);
+      const today = dateKey(new Date()) === dateKey(d);
+      return (today ? "today" : d.toLocaleDateString(undefined, { day:"numeric", month:"short" })) +
+        " at " + d.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" });
+    } catch { return "?"; }
+  }
+  function refreshStaleInfo() {
+    const el = $("staleInfo");
+    if (!el) return;
+    let txt = "No changes noted yet.";
+    try {
+      const s = JSON.parse(localStorage.getItem("plannerLastEdit"));
+      if (s && s.at) txt = "Last change: " + fmtWhen(s.at) + " on " + esc(s.device || "this device");
+    } catch {}
+    const nasAt = localStorage.getItem("plannerNasSavedAt");
+    if (nasAt) txt += " · Home-storage copy saved " + esc(fmtWhen(nasAt));
+    el.textContent = txt;
+  }
+
+  /* ================= WIRING ================= */
+  $("vDay").onclick = () => { view = "day"; setViewButtons(); render(); };
+  $("vWeek").onclick = () => { view = "week"; setViewButtons(); render(); };
+  $("vMonth").onclick = () => { view = "month"; setViewButtons(); render(); };
+  $("addBtn").onclick = addTask;
+  $("taskTitle").addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
+  $("advBtn").onclick = () => {
+    advanced = !advanced;
+    $("advBtn").setAttribute("aria-expanded", advanced ? "true" : "false");
+    $("advBtn").textContent = advanced ? "Fewer options \u2191" : "More options \u2193";
+    applyEntryType();
+  };
+  $("poolBtn").onclick = addToPool;
+  $("habitTimeMode").onchange = applyEntryType;
+  $("eventType").onchange = () => {
+    applyEntryType();
+    $("eventCustomLabel").style.display = $("eventType").value === "custom" ? "" : "none";
+  };
+  $("taskWindow").onchange = () => {
+    $("customWindowRow").style.display = $("taskWindow").value === "custom" ? "" : "none";
+  };
+  $("habitDays").addEventListener("click", e => {
+    const b = e.target.closest("button[data-d]");
+    if (b) { b.classList.toggle("on"); b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false"); }
+  });
+  $("typeSwitch").addEventListener("click", e => {
+    const b = e.target.closest("button[data-type]");
+    if (b) setEntryType(b.dataset.type);
+  });
+  $("estimateBtn").onclick = () => {
+    const title = $("taskTitle").value.trim();
+    if (!title) { toast("Type it first, then I can guess how long it takes.", true); return; }
+    const dtext = $("taskDetails").value.trim();
+    const est = estimateDuration(dtext ? title + " — " + dtext : title);
+    if (entryType === "deadline") {
+      const steps = buildBreakdown(title, dtext).steps.length;
+      toast("About " + fmtDur(est.minutes) + " of work, roughly " + steps + " steps. " + est.reason);
+      return;
+    }
+    $("durHours").value = Math.floor(est.minutes / 60);
+    $("durMinutes").value = est.minutes % 60;
+    toast("About " + fmtDur(est.minutes) + ". " + est.reason);
+  };
+  $("breakdownBtn").onclick = () => {
+    if (entryType === "deadline") { const dl = addDeadline(); if (dl) openDeadlinePlan(dl); return; }
+    openBreakdown(null);
+  };
+  $("modalAddStep").onclick = () => {
+    const rows = currentStepRows();
+    rows.push({ text: "", minutes: 15 });
+    renderModalSteps(rows);
+    const inputs = document.querySelectorAll("#modalSteps .step-text");
+    inputs[inputs.length - 1].focus();
+  };
+  $("modalCancel").onclick = () => $("modalBackdrop").classList.remove("open");
+  $("modalConfirm").onclick = confirmModalSteps;
+  $("modalSteps").addEventListener("change", updateModalTotal);
+  $("todayBtn").onclick = () => { currentDate = dateKey(new Date()); render(); };
+  $("prevBtn").onclick = () => shift(-1);
+  $("nextBtn").onclick = () => shift(1);
+  $("packBtn").onclick = rescheduleAll;
+  $("packWeekBtn").onclick = packWeek;
+
+  /* Keyboard */
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      $("modalBackdrop").classList.remove("open");
+      $("choiceBackdrop").classList.remove("open");
+      $("guideBackdrop").classList.remove("open");
+      $("toolsBackdrop").classList.remove("open");
+      if (editId) cancelEdit();
+      return;
+    }
+    const t = e.target;
+    const typing = t && typeof t.matches === "function" && t.matches("input, select, textarea");
+    if (typing || e.ctrlKey || e.metaKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "r") rescheduleAll();
+    if (k === "e") cycleEntryType();
+  });
+
+  /* Views / settings / dialogs */
+  $("toolsBtn").onclick = e => { e.stopPropagation(); $("toolsBackdrop").classList.add("open"); };
+  $("settingsCloseBtn").onclick = () => $("toolsBackdrop").classList.remove("open");
+  $("toolsBackdrop").onclick = e => { if (e.target === $("toolsBackdrop")) $("toolsBackdrop").classList.remove("open"); };
+  $("guideBtnSettings").onclick = () => { $("toolsBackdrop").classList.remove("open"); $("guideBackdrop").classList.add("open"); };
+  $("guideBtnInline").onclick = () => $("guideBackdrop").classList.add("open");
+  $("helpBtn").onclick = () => $("guideBackdrop").classList.add("open");
+  $("guideClose").onclick = () => $("guideBackdrop").classList.remove("open");
+  $("guideBackdrop").onclick = e => { if (e.target === $("guideBackdrop")) $("guideBackdrop").classList.remove("open"); };
+  $("modalBackdrop").onclick = e => { if (e.target === $("modalBackdrop")) $("modalBackdrop").classList.remove("open"); };
+
+  function refreshSettingsLabels() {
+    $("dayHoursLbl").textContent = fmtTime(DAY_START) + "–" + fmtTime(DAY_END);
+    $("slotHoursLbl").textContent = fmtTime(SLOT_START) + "–" + fmtTime(SLOT_END);
+  }
+  $("dayHoursBtn").onclick = () => {
+    const s = prompt("The calendar starts at what time? (like 07:00 or 00:00)", fmtTime(DAY_START));
+    if (s === null) return;
+    const en = prompt("And ends at what time? (like 17:00 or 24:00)", fmtTime(DAY_END));
+    if (en === null) return;
+    const ns = toMin(s), ne = toMin(en);
+    if (isNaN(ns) || isNaN(ne) || ne <= ns) { toast("Those times don't work — the end has to be after the start.", true); return; }
+    DAY_START = ns; DAY_END = ne;
+    if (SLOT_START < ns || SLOT_END > ne || SLOT_START >= SLOT_END) { SLOT_START = ns; SLOT_END = ne; }
+    saveSettings(); refreshSettingsLabels(); render();
+    toast("Your calendar now shows " + fmtTime(DAY_START) + "–" + fmtTime(DAY_END) + ".");
+  };
+  $("slotHoursBtn").onclick = () => {
+    const s = prompt("New to-dos can be placed from what time?", fmtTime(SLOT_START));
+    if (s === null) return;
+    const en = prompt("Until what time?", fmtTime(SLOT_END));
+    if (en === null) return;
+    const ns = toMin(s), ne = toMin(en);
+    if (isNaN(ns) || isNaN(ne) || ns < DAY_START || ne > DAY_END || ne <= ns) {
+      toast("Those times don't work — they must sit inside the hours your calendar shows.", true); return;
+    }
+    SLOT_START = ns; SLOT_END = ne;
+    saveSettings(); refreshSettingsLabels(); render();
+    toast("New to-dos will be placed between " + fmtTime(SLOT_START) + " and " + fmtTime(SLOT_END) + ".");
+  };
+
+  /* Backups */
+  $("exportBtn").onclick = async () => {
+    const data = { planner: localStorage.getItem("plannerState"),
+                   habits: localStorage.getItem("plannerHabits"),
+                   theme: localStorage.getItem("plannerTheme"),
+                   lastEdit: localStorage.getItem("plannerLastEdit"),
+                   savedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const fname = "ad-deer-backup-" + dateKey(new Date()) + ".json";
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: fname,
+          types: [{ description: "AD-Deer backup (JSON)", accept: { "application/json": [".json"] } }]
+        });
+        const w = await handle.createWritable();
+        await w.write(blob); await w.close();
+        toast("Backup saved. Keep it somewhere safe (Drive, iCloud) in case you switch devices.");
+        return;
+      } catch (e) {
+        if (e && e.name === "AbortError") { toast("Backup cancelled."); return; }
+      }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("Backup downloaded — move it to Drive or iCloud to keep it safe.");
+  };
+  $("importBtn").onclick = () => {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.onchange = () => {
+      const f = inp.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const data = JSON.parse(rd.result);
+          if (!data.planner) { toast("That doesn't look like an AD-Deer backup file.", true); return; }
+          localStorage.setItem("plannerState", data.planner);
+          if (data.habits) localStorage.setItem("plannerHabits", data.habits);
+          if (data.theme) localStorage.setItem("plannerTheme", data.theme);
+          if (data.lastEdit) localStorage.setItem("plannerLastEdit", data.lastEdit);
+          state = load(); habits = loadHabits(); weekPool = loadPool();
+          applySavedTheme();
+          save(); saveHabits(); render();
+          refreshStaleInfo();
+          toast("Loaded from backup" + (data.savedAt ? " (saved " + fmtWhen(data.savedAt) + ")" : "") + ".");
+        } catch { toast("Couldn't read that file.", true); }
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
+  };
+
+  /* Home storage (NAS) sync — same WebDAV setup as before */
+  const nasUrlKey = "plannerNasUrl", nasUserKey = "plannerNasUser", nasAuthKey = "plannerNasAuth";
+  $("nasCfgBtn").onclick = () => {
+    const url = prompt("The web address of your storage box:", localStorage.getItem(nasUrlKey) || "https://ugreen-nas.tail1407e7.ts.net/adhdeer/ad-deer.json");
+    if (url === null) return;
+    localStorage.setItem(nasUrlKey, url.trim());
+    const user = prompt("Your username there:", localStorage.getItem(nasUserKey) || "");
+    if (user === null) return;
+    localStorage.setItem(nasUserKey, user);
+    const pass = prompt("Your password there (kept on this device only):", "");
+    if (pass === null) return;
+    localStorage.setItem(nasAuthKey, "Basic " + btoa(user + ":" + pass));
+    toast("Home storage set up.");
+  };
+  $("nasUpBtn").onclick = async () => {
+    const url = localStorage.getItem(nasUrlKey);
+    if (!url) { toast("Set up your home storage in Settings first.", true); return; }
+    try {
+      const r = await fetch(url, { method: "PUT", headers: { "Authorization": localStorage.getItem(nasAuthKey) || "" },
+        body: JSON.stringify({ planner: localStorage.getItem("plannerState"),
+                               habits: localStorage.getItem("plannerHabits"),
+                               theme: localStorage.getItem("plannerTheme"),
+                               savedAt: new Date().toISOString() }) });
+      if (!r.ok) throw new Error(r.status);
+      localStorage.setItem("plannerNasSavedAt", new Date().toISOString());
+      refreshStaleInfo();
+      toast("Saved to your home storage.");
+    } catch (e) { toast("Saving to your home storage failed (" + e.message + "). Check the address and login.", true); }
+  };
+  $("nasDownBtn").onclick = async () => {
+    const url = localStorage.getItem(nasUrlKey);
+    if (!url) { toast("Set up your home storage in Settings first.", true); return; }
+    if (!confirm("Load the latest copy from your home storage? This replaces what's on this device.")) return;
+    try {
+      const r = await fetch(url, { headers: { "Authorization": localStorage.getItem(nasAuthKey) || "" } });
+      if (r.status === 404) { toast("There's nothing saved there yet — save something first.", true); return; }
+      if (!r.ok) throw new Error(r.status);
+      const data = await r.json();
+      if (!data.planner) { toast("That file isn't an AD-Deer backup.", true); return; }
+      if (data.savedAt) localStorage.setItem("plannerNasSavedAt", data.savedAt);
+      localStorage.setItem("plannerState", data.planner);
+      if (data.habits) localStorage.setItem("plannerHabits", data.habits);
+      if (data.theme) localStorage.setItem("plannerTheme", data.theme);
+      state = load(); habits = loadHabits(); weekPool = loadPool();
+      applySavedTheme();
+      save(); saveHabits(); render();
+      refreshStaleInfo();
+      toast("Loaded from your home storage (last saved " + (data.savedAt ? fmtWhen(data.savedAt) : "?") + ").");
+    } catch (e) { toast("Loading from your home storage failed (" + e.message + ").", true); }
+  };
+
+  /* Daily summary notification */
+  function buildDailySummary() {
+    const key = dateKey(new Date());
+    const list = itemsFor(key);
+    const nowM = new Date().getHours() * 60 + new Date().getMinutes();
+    const tasks = list.filter(i => i.kind === "task" && !i.done);
+    const events = list.filter(i => i.kind === "event" && i.time != null);
+    const dues = list.filter(isDeadline).filter(d => !d.done).sort((a,b)=>a.dueTime-b.dueTime);
+    const habs = list.filter(i => i.kind === "habit");
+    const parts = [];
+    if (tasks.length) parts.push(tasks.length + " to-do" + (tasks.length > 1 ? "s" : "") + " (" + tasks.reduce((s,i)=>s+i.duration,0) + " min)");
+    if (events.length) {
+      const next = events.filter(e => e.time >= nowM).sort((a,b)=>a.time-b.time)[0] || events[0];
+      parts.push(events.length + " event" + (events.length > 1 ? "s" : "") + ", next at " + fmtTime(next.time));
+    }
+    if (dues.length) parts.push(dues.length + " due, first at " + fmtTime(dues[0].dueTime));
+    if (habs.length) parts.push("habits " + habs.filter(h=>h.done).length + "/" + habs.length + " done");
+    return parts.length ? parts.join(" · ") : "Nothing scheduled today.";
+  }
+  async function showSummaryNotification(title, body) {
+    try { new Notification(title, { body }); }
+    catch {
+      if (!navigator.serviceWorker) return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, { body });
+      } catch {}
+    }
+  }
+  function maybeDailySummary() {
+    if (localStorage.getItem("plannerDailySummary") !== "on") return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const today = dateKey(new Date());
+    if (localStorage.getItem("plannerLastSummary") === today) return;
+    localStorage.setItem("plannerLastSummary", today);
+    showSummaryNotification("ADHdeer — today", buildDailySummary());
+  }
+  $("notifyBtn") && ($("notifyBtn").onclick = async () => {
+    if (!("Notification" in window)) { toast("This browser can't show notifications.", true); return; }
+    if (localStorage.getItem("plannerDailySummary") === "on") {
+      localStorage.setItem("plannerDailySummary", "off");
+      $("notifyLbl").textContent = "off";
+      toast("Daily summary turned off.");
+      return;
+    }
+    let perm = Notification.permission;
+    if (perm === "default") perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      localStorage.setItem("plannerDailySummary", "on");
+      $("notifyLbl").textContent = "on";
+      toast("Daily summary on — one gentle nudge each day you open the planner.");
+      localStorage.removeItem("plannerLastSummary");
+      maybeDailySummary();
+    } else {
+      toast("Notifications are switched off — allow them in your browser's settings for this site.", true);
+    }
+  });
+  maybeDailySummary();
+
+  /* Theme: follow the device unless you've picked one yourself */
+  function applySavedTheme() {
+    const saved = localStorage.getItem("plannerTheme");
+    document.documentElement.classList.remove("light", "dark");
+    if (saved === "light") document.documentElement.classList.add("light");
+    else if (saved === "dark") document.documentElement.classList.add("dark");
+    // nothing saved -> the media-query in the CSS follows the device automatically
+  }
+  applySavedTheme();
+  $("themeBtn").onclick = () => {
+    // Whatever it currently looks like, flip it and remember.
+    const looksDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? !document.documentElement.classList.contains("light")
+      : document.documentElement.classList.contains("dark");
+    document.documentElement.classList.remove("light", "dark");
+    if (looksDark) document.documentElement.classList.add("light");
+    else document.documentElement.classList.add("dark");
+    localStorage.setItem("plannerTheme", looksDark ? "light" : "dark");
+  };
+
+  /* Mobile tabs */
+  function setMobileTab(which) {
+    document.body.classList.toggle("mobile-tab-list", which === "list");
+    $("tabList").classList.toggle("active", which === "list");
+    $("tabCal").classList.toggle("active", which === "cal");
+    document.body.classList.toggle("mobile-tab-cal", which === "cal");
+  }
+function setMobileTabSafe(which) {
+  document.body.classList.toggle("mobile-tab-list", which === "list");
+  document.body.classList.toggle("mobile-tab-cal", which === "cal");
+  const tl = $("tabList"), tc = $("tabCal");
+  if (tl) tl.classList.toggle("active", which === "list");
+  if (tc) tc.classList.toggle("active", which === "cal");
+}
+if ($("tabList")) $("tabList").onclick = () => setMobileTabSafe("list");
+if ($("tabCal")) $("tabCal").onclick = () => setMobileTabSafe("cal");
+setMobileTabSafe("cal");
+
+  /* Go */
+  applyEntryType();
+  refreshSettingsLabels();
+  refreshStaleInfo();
+  setViewButtons();
+  render();
+  if (navigator.serviceWorker) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>

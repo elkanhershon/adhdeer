@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ADHdeer</string>
+    <string name="title_activity_main">ADHdeer</string>
+    <string name="package_name">com.adhdeer.app</string>
+    <string name="custom_url_scheme">com.adhdeer.app</string>
+</resources>
