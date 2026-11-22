@@ -48,7 +48,8 @@ jobs:
         env:
           KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > /tmp/release.keystore
+          echo "$KEYSTORE_B64" | grep -v -e '--' -e 'CERTIFICATE' | tr -d ' \r\n\t' | base64 --decode > /tmp/release.keystore
+          [ -s /tmp/release.keystore ] || { echo "::error::Keystore is empty after decoding — check the RELEASE_KEYSTORE_BASE64 secret." ; exit 1 ; }
           cd android
           ./gradlew assembleRelease --no-daemon \
             -Pandroid.injected.signing.store.file=/tmp/release.keystore \
