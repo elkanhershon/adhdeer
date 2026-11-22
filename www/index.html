@@ -452,6 +452,14 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           <input type="number" id="durMinutes" min="0" max="55" step="5" value="30" title="Minutes">
           <span class="hint">minutes</span>
         </div>
+        <div class="day-chips" id="durChips" aria-label="Common lengths">
+          <button type="button" data-min="15">15m</button>
+          <button type="button" data-min="30">30m</button>
+          <button type="button" data-min="45">45m</button>
+          <button type="button" data-min="60">1h</button>
+          <button type="button" data-min="90">1½h</button>
+          <button type="button" data-min="120">2h</button>
+        </div>
       </div>
 
       <div class="field" id="fixedTimeRow">
@@ -478,10 +486,21 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           <input type="date" id="deadlineDate">
           <input type="time" id="deadlineTime" value="17:00">
         </div>
+        <div class="day-chips" id="deadlineChips" aria-label="Quick due dates">
+          <button type="button" data-plus="1">Tomorrow</button>
+          <button type="button" data-plus="3">In 3 days</button>
+          <button type="button" data-plus="7">Next week</button>
+        </div>
       </div>
 
       <div class="field" id="habitDaysRow">
         <label>Which days?</label>
+        <div class="day-chips" id="habitPresets" aria-label="Common day patterns">
+          <button type="button" data-preset="all">Every day</button>
+          <button type="button" data-preset="weekdays">Weekdays</button>
+          <button type="button" data-preset="weekends">Weekends</button>
+          <button type="button" data-preset="none">Clear</button>
+        </div>
         <div class="day-chips" id="habitDays">
           <button type="button" data-d="0" class="on" aria-pressed="true">Mon</button>
           <button type="button" data-d="1" class="on" aria-pressed="true">Tue</button>
@@ -639,6 +658,10 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       <button id="nasDownBtn" class="set-item">
         <span class="set-txt"><span class="set-title">Load from my home storage</span><span class="set-sub">brings the latest copy onto this device</span></span>
       </button>
+      <button id="nasAutoBtn" class="set-item">
+        <span class="set-txt"><span class="set-title">Mirror my changes automatically</span><span class="set-sub">quietly saves to my home storage after I change anything</span></span>
+        <span class="set-val" id="nasAutoLbl"></span>
+      </button>
     </div>
 
     <h3 class="set-head">Help</h3>
@@ -751,16 +774,25 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     localStorage.setItem("plannerLastEdit", JSON.stringify({ at: new Date().toISOString(),
       device: localStorage.getItem("plannerDeviceName") || guessDeviceName() }));
   }
-  function save() { localStorage.setItem("plannerState", JSON.stringify(state)); stampEdit(); refreshStaleInfo(); }
-  function saveHabits() { localStorage.setItem("plannerHabits", JSON.stringify(habits)); stampEdit(); refreshStaleInfo(); }
-  function savePool() { localStorage.setItem("plannerWeekPool", JSON.stringify(weekPool)); stampEdit(); refreshStaleInfo(); }
+  function save() { localStorage.setItem("plannerState", JSON.stringify(state)); stampEdit(); refreshStaleInfo(); scheduleAutoNasSync(); }
+  function saveHabits() { localStorage.setItem("plannerHabits", JSON.stringify(habits)); stampEdit(); refreshStaleInfo(); scheduleAutoNasSync(); }
+  function savePool() { localStorage.setItem("plannerWeekPool", JSON.stringify(weekPool)); stampEdit(); refreshStaleInfo(); scheduleAutoNasSync(); }
+
+  /* Auto-mirror: home storage quietly receives each change a few seconds later */
+  let nasAutoTimer = null;
+  function scheduleAutoNasSync() {
+    if (localStorage.getItem("plannerNasAutoSync") !== "on") return;
+    clearTimeout(nasAutoTimer);
+    nasAutoTimer = setTimeout(() => nasUpload(true), 3000);
+  }
 
   let state = load();
   let habits = loadHabits();
   let weekPool = loadPool();
   let currentDate = dateKey(new Date());
   let view = "day";
-  let entryType = "task";
+  let entryType = (["task","event","deadline","habit"].indexOf(localStorage.getItem("plannerEntryType")) !== -1)
+    ? localStorage.getItem("plannerEntryType") : "task";
   let modalCtx = null;                      // breakdown / deadline-planning dialog state
   let editId = null, editKey = null, editGroupId = null;   // edit-in-form state (used by later chunks)
   let advanced = false;
@@ -1302,6 +1334,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
   function setEntryType(t) {
     entryType = t;
+    localStorage.setItem("plannerEntryType", t);
     applyEntryType();
     $("taskTitle").focus();
   }
@@ -2029,6 +2062,11 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   $("vMonth").onclick = () => { view = "month"; setViewButtons(); render(); };
   $("addBtn").onclick = addTask;
   $("taskTitle").addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
+  ["taskTime","durHours","durMinutes","deadlineDate","deadlineTime","eventCustomLabel","habitTime","windowFrom","windowTo"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addTask(); } });
+  });
+  $("taskDetails").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addTask(); } });
   $("advBtn").onclick = () => {
     advanced = !advanced;
     $("advBtn").setAttribute("aria-expanded", advanced ? "true" : "false");
@@ -2036,6 +2074,24 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     applyEntryType();
   };
   $("poolBtn").onclick = addToPool;
+  document.querySelectorAll("#durChips button").forEach(b2 => { b2.onclick = () => {
+    const m = +b2.dataset.min;
+    $("durHours").value = Math.floor(m / 60);
+    $("durMinutes").value = m % 60;
+    $("taskTitle").focus();
+  }; });
+  const HABIT_PRESETS = { all:[0,1,2,3,4,5,6], weekdays:[0,1,2,3,4], weekends:[5,6], none:[] };
+  document.querySelectorAll("#habitPresets button").forEach(b2 => { b2.onclick = () => {
+    const days = HABIT_PRESETS[b2.dataset.preset];
+    document.querySelectorAll("#habitDays button").forEach(x => {
+      const on = days.indexOf(+x.dataset.d) !== -1;
+      x.classList.toggle("on", on);
+      x.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }; });
+  document.querySelectorAll("#deadlineChips button").forEach(b2 => { b2.onclick = () => {
+    $("deadlineDate").value = dateKey(addDays(new Date(), +b2.dataset.plus));
+  }; });
   $("habitTimeMode").onchange = applyEntryType;
   $("eventType").onchange = () => {
     applyEntryType();
@@ -2217,9 +2273,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     localStorage.setItem(nasAuthKey, "Basic " + btoa(user + ":" + pass));
     toast("Home storage set up.");
   };
-  $("nasUpBtn").onclick = async () => {
+  async function nasUpload(silent) {
     const url = localStorage.getItem(nasUrlKey);
-    if (!url) { toast("Set up your home storage in Settings first.", true); return; }
+    if (!url) { if (!silent) toast("Set up your home storage in Settings first.", true); return; }
     try {
       const r = await fetch(url, { method: "PUT", headers: { "Authorization": localStorage.getItem(nasAuthKey) || "" },
         body: JSON.stringify({ planner: localStorage.getItem("plannerState"),
@@ -2229,8 +2285,17 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       if (!r.ok) throw new Error(r.status);
       localStorage.setItem("plannerNasSavedAt", new Date().toISOString());
       refreshStaleInfo();
-      toast("Saved to your home storage.");
-    } catch (e) { toast("Saving to your home storage failed (" + e.message + "). Check the address and login.", true); }
+      if (!silent) toast("Saved to your home storage.");
+    } catch (e) { if (!silent) toast("Saving to your home storage failed (" + e.message + "). Check the address and login.", true); }
+  }
+  function refreshNasAutoLbl() { $("nasAutoLbl").textContent = localStorage.getItem("plannerNasAutoSync") === "on" ? "on" : "off"; }
+  $("nasUpBtn").onclick = () => nasUpload(false);
+  $("nasAutoBtn").onclick = () => {
+    const on = localStorage.getItem("plannerNasAutoSync") === "on";
+    if (!on && !localStorage.getItem(nasUrlKey)) { toast("Set up my home storage first \u2014 that\u2019s where the copy goes.", true); return; }
+    localStorage.setItem("plannerNasAutoSync", on ? "off" : "on");
+    refreshNasAutoLbl();
+    toast(on ? "Auto-mirror switched off." : "Auto-mirror on \u2014 each change quietly lands in your home storage.");
   };
   $("nasDownBtn").onclick = async () => {
     const url = localStorage.getItem(nasUrlKey);
@@ -2354,6 +2419,7 @@ setMobileTabSafe("cal");
   /* Go */
   applyEntryType();
   refreshSettingsLabels();
+  refreshNasAutoLbl();
   refreshStaleInfo();
   setViewButtons();
   render();
