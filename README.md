@@ -39,6 +39,11 @@ Tagging a commit (`git tag v1.1 && git push origin v1.1`) or running
 `RELEASE_KEY_PASSWORD`) — otherwise it falls back to a debug build and attaches
 the APK to a GitHub Release.
 
+You don't need to touch version numbers by hand: the release workflow sets
+`versionName` from the tag (e.g. `v1.1` → 1.1) and `versionCode` from the
+workflow run number (always increasing), so `android/app/build.gradle`
+stays at its placeholders.
+
 ## Build it yourself
 
 Prereqs: Node.js 22, JDK 21, Android SDK (platform 36, build-tools 36.0.0).
