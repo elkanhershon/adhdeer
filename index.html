@@ -124,9 +124,9 @@ img{max-width:100%}
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:14px 20px;background:var(--accent);color:var(--accent-ink);
 }
-.brand{display:flex;align-items:flex-end;gap:10px;margin-right:auto}
+.brand{display:flex;align-items:flex-end;gap:10px;margin-right:auto;flex:0 0 auto}
 .brand h1{display:flex;align-items:center;margin:0;font-size:22px}
-.logo{height:28px;width:auto;display:block}
+.logo{height:28px;width:auto;display:block;max-width:none}
 .topbar .icon-btn{background:transparent;border-color:var(--accent-ink)}
 .topbar .btn-quiet{background:transparent;border-color:var(--accent-ink);color:var(--accent-ink)}
 .topbar .btn-quiet:hover{border-color:var(--accent-ink);filter:brightness(1.15)}
@@ -240,6 +240,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 }
 .view-switch button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tb-tools{display:contents}
+#calAddBtn{display:none}
 .cal-outer{flex:1;overflow:auto;min-height:0;padding:8px 16px}
 .hour-head,.cal-head-days{display:grid;grid-template-columns:64px 1fr}
 .wk-heads,.wk-body{display:grid;grid-template-columns:64px repeat(7,1fr)}
@@ -365,6 +366,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .mini-dialog .set-item .set-sub{color:var(--soft);font-size:15px}
 .mini-dialog .set-item .set-val{flex:0 0 auto;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-size:15px}
 .mini-dialog .set-item .set-val:empty{display:none}
+.mini-dialog #notifKindsPanel{flex-wrap:wrap}
+.mini-dialog #notifKindsChips{flex:0 0 100%}
+.mini-dialog #notifKindsChips button{text-align:center;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;min-height:44px;padding:8px;border-radius:12px;font-weight:700;font-size:15px}
 
 /* ================= TOAST ================= */
 .toast{
@@ -405,6 +409,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   .tb-tools{display:flex;flex:0 0 100%;gap:8px;align-items:center}
   .view-switch button{min-height:38px;padding:4px 9px;font-size:13px}
   #packWeekBtn{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom) + 4px);z-index:36;box-shadow:var(--shadow)}
+  body.mobile-tab-cal #calAddBtn{display:grid;place-items:center;position:fixed;left:16px;bottom:calc(84px + env(safe-area-inset-bottom) + 4px);z-index:36;box-shadow:var(--shadow);width:52px;height:52px;border-radius:50%;padding:0;font-size:26px;line-height:1}
   .toast{bottom:calc(148px + env(safe-area-inset-bottom))}
   .topbar{padding:8px 12px;gap:8px;flex-wrap:nowrap}
   .topbar .icon-btn,.topbar .btn-quiet{min-height:40px;min-width:40px}
@@ -479,6 +484,16 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           <button type="button" data-min="60">1h</button>
           <button type="button" data-min="90">1½h</button>
           <button type="button" data-min="120">2h</button>
+        </div>
+      </div>
+
+      <div class="field" id="addDayRow">
+        <label for="addDay">Which day? <span class="opt">(leave it on today unless this is for another day)</span></label>
+        <input type="date" id="addDay">
+        <div class="day-chips" id="addDayChips" aria-label="Quick days">
+          <button type="button" data-plus="0">Today</button>
+          <button type="button" data-plus="1">Tomorrow</button>
+          <button type="button" data-plus="7">Next week</button>
         </div>
       </div>
 
@@ -616,6 +631,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           </div>
         </div>
       <button class="btn-quiet" id="packWeekBtn">Fill this week</button>
+      <button class="btn-quiet" id="calAddBtn" aria-label="Add something on this day">+</button>
     </div>
     <div class="cal-outer" id="calOuter">
       <div class="cal-head-days" id="calHead" aria-hidden="true"></div>
@@ -683,10 +699,15 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         <span class="set-txt"><span class="set-title">Everything in my planner</span><span class="set-sub">also nudges about items that arrived from elsewhere</span></span>
         <span class="set-val" id="notifAllLbl"></span>
       </button>
-      <button id="notifKindsBtn" class="set-item">
-        <span class="set-txt"><span class="set-title">Which kinds?</span><span class="set-sub">to-dos, events, deadlines and habits</span></span>
-        <span class="set-val" id="notifKindsLbl"></span>
-      </button>
+      <div class="set-item" id="notifKindsPanel">
+        <span class="set-txt"><span class="set-title">Which kinds?</span><span class="set-sub">tap a kind to switch its reminders on or off</span></span>
+        <div class="day-chips" id="notifKindsChips" role="group" aria-label="Which kinds to be reminded about">
+          <button type="button" data-kind="task" aria-pressed="false">To&#8209;dos</button>
+          <button type="button" data-kind="event" aria-pressed="false">Events</button>
+          <button type="button" data-kind="deadline" aria-pressed="false">Deadlines</button>
+          <button type="button" data-kind="habit" aria-pressed="false">Habits</button>
+        </div>
+      </div>
     </div>
 
     <h3 class="set-head">My account</h3>
@@ -822,6 +843,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   /* Auto-mirror: home storage quietly receives each change a few seconds later */
   let acctSyncTimer = null;
   function scheduleAutoSync() {
+    scheduleAllUpcoming();
     if (!acctSignedIn() || localStorage.getItem("plannerAutoSync") === "off") return;
     clearTimeout(acctSyncTimer);
     acctSyncTimer = setTimeout(() => acctUpload(true), 3000);
@@ -1024,7 +1046,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     if (entryType === "deadline") { addDeadline(); return; }
     if (entryType === "habit")   { addHabit();   return; }
     const isEvent = entryType === "event";
-    if (isPastDay(currentDate)) { toast("That day has already happened — go to today or a future day first.", true); return; }
+    const dayKey = $("addDay").value || currentDate;
+    const daySuffix = dayKey === currentDate ? "" : " Drop it's on " + fmtDay(dayKey) + ".";
+    if (isPastDay(dayKey)) { toast("That day has already happened — go to today or a future day first.", true); return; }
     const title = $("taskTitle").value.trim();
     if (!title) { toast(isEvent ? "Give the event a name first." : "Say what needs doing first.", true); return; }
     const duration = readDur();
@@ -1036,28 +1060,28 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     if (t) {
       const start = toMin(t);
       if (start < DAY_START || start + duration > DAY_END) { toast("That's outside the hours your calendar shows ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+"). Widen them in Settings.", true); return; }
-      if (overlaps(items(), start, start+duration)) { toast("That time is already taken by something else.", true); return; }
+      if (overlaps(itemsFor(dayKey), start, start+duration)) { toast("That time is already taken by something else.", true); return; }
       if (isEvent) {
-        items().push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details, mine:true });
-        toast("Event added: \""+title+"\" at "+fmtTime(start)+".");
+        itemsFor(dayKey).push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details, mine:true });
+        toast("Event added: \""+title+"\" at "+fmtTime(start)+"."+daySuffix);
       } else {
-        items().push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details, mine:true });
-        toast("Fixed in place: \""+title+"\" at "+fmtTime(start)+".");
+        itemsFor(dayKey).push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details, mine:true });
+        toast("Fixed in place: \""+title+"\" at "+fmtTime(start)+"."+daySuffix);
       }
     } else {
       const [wf, wt] = currentWindowChoice();
-      const from = Math.max(wf, slotFloor(currentDate));
-      const slot = findFreeSlot(items(), duration, from, wt);
+      const from = Math.max(wf, slotFloor(dayKey));
+      const slot = findFreeSlot(itemsFor(dayKey), duration, from, wt);
       if (slot == null) { toast("I couldn't find a free "+fmtDur(duration)+" gap between "+fmtTime(from)+" and "+fmtTime(wt)+". Try changing the hours under More options, or set a start time yourself.", true); return; }
-      items().push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true });
-      toast("\""+title+"\" slotted in at "+fmtTime(slot)+".");
+      itemsFor(dayKey).push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true });
+      toast("\""+title+"\" slotted in at "+fmtTime(slot)+"."+daySuffix);
     }
     clearForm(); save(); render();
     if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
   }
 
   function clearForm() {
-    $("taskTitle").value = ""; $("taskDetails").value = ""; $("taskTime").value = "";
+    $("taskTitle").value = ""; $("taskDetails").value = ""; $("taskTime").value = ""; $("addDay").value = currentDate;
   }
 
   function addToPool() {
@@ -1371,6 +1395,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("habitTimeRow").style.display      = isHabit ? "" : "none";
     $("habitTime").style.display         = (isHabit && $("habitTimeMode").value === "fixed") ? "" : "none";
     $("fixedTimeRow").style.display      = isDue || isHabit ? "none" : "";
+    $("addDayRow").style.display         = isDue || isHabit ? "none" : "";
+    if (!isDue && !isHabit) $("addDay").value = $("addDay").value || currentDate;
     $("advBtn").style.display = entryType === "task" ? "" : "none";
     $("addBtn").textContent =
       isEvent ? "Add event" : isDue ? "Set deadline" : isHabit ? "Add habit" : "Add to my day";
@@ -1516,6 +1542,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("durHours").value = Math.floor(item.duration / 60);
     $("durMinutes").value = item.duration % 60;
     $("taskTime").value = item.time != null ? fmtTime(item.time) : "";
+    $("addDay").value = k;
     if (isDeadline(item)) { $("deadlineDate").value = item.dueDate; $("deadlineTime").value = fmtTime(item.dueTime); }
     if (item.kind === "event" && item.eventType) {
       $("eventType").value = item.eventType;
@@ -1549,6 +1576,12 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         itemsFor(date).push(item);
       }
     } else {
+      const newDay = $("addDay").value || editKey;
+      if (newDay !== editKey && !isPastDay(newDay)) {
+        state[editKey] = (state[editKey] || []).filter(x => x.id !== item.id);
+        editKey = newDay;
+        itemsFor(newDay).push(item);
+      }
       const t = $("taskTime").value;
       if (t) {
         const start = toMin(t);
@@ -2118,6 +2151,15 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   $("vDay").onclick = () => { view = "day"; setViewButtons(); render(); };
   $("vWeek").onclick = () => { view = "week"; setViewButtons(); render(); };
   $("vMonth").onclick = () => { view = "month"; setViewButtons(); render(); };
+  document.querySelectorAll("#addDayChips button").forEach(b2 => {
+    b2.onclick = () => { $("addDay").value = dateKey(addDays(parseDate(dateKey(new Date())), +b2.dataset.plus || 0)); };
+  });
+  $("calAddBtn").onclick = () => {
+    $("addDay").value = currentDate;
+    setMobileTabSafe("add");
+    if (currentDate !== dateKey(new Date())) toast("Adding on " + fmtDay(currentDate) + ".");
+    $("taskTitle").focus();
+  };
   $("addBtn").onclick = addTask;
   $("taskTitle").addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
   ["taskTime","durHours","durMinutes","deadlineDate","deadlineTime","eventCustomLabel","habitTime","windowFrom","windowTo"].forEach(id => {
@@ -2440,18 +2482,14 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       list.forEach(i => scheduleItem(i, k));
     }
   }
-  function notifKindLbl() {
-    const c = readNotifCats(), names = [];
-    if (c.task) names.push("to-dos");
-    if (c.event) names.push("events");
-    if (c.deadline) names.push("deadlines");
-    if (c.habit) names.push("habits");
-    return names.length ? names.join(", ") : "none";
-  }
   function refreshNotifLbls() {
     $("notifMasterLbl").textContent = notifOn() ? "on" : "off";
     $("notifAllLbl").textContent = localStorage.getItem("plannerNotifAll") === "on" ? "on" : "off";
-    $("notifKindsLbl").textContent = notifOn() ? notifKindLbl() : "";
+    document.querySelectorAll("#notifKindsChips button").forEach(b2 => {
+      const on = notifOn() && !!readNotifCats()[b2.dataset.kind];
+      b2.classList.toggle("on", on);
+      b2.setAttribute("aria-pressed", on ? "true" : "false");
+    });
   }
   $("notifMasterBtn").onclick = async () => {
     if (notifOn()) {
@@ -2494,27 +2532,28 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     refreshNotifLbls();
     toast(on ? "I'll only nudge you about things you add here." : "I'll nudge you about everything in your planner.");
   };
-  $("notifKindsBtn").onclick = () => {
-    if (!notifOn()) { toast("Turn Reminders on first.", true); return; }
-    const cur = readNotifCats();
-    const list = [["task", "to-dos"], ["event", "events"], ["deadline", "deadlines"], ["habit", "habits"]];
-    for (const [k, lbl] of list) {
-      cur[k] = confirm("Reminders about " + lbl + "?\n\nOK = yes\\nCancel = no\n\n(Currently " + (cur[k] ? "on" : "off") + ".)");
-    }
-    localStorage.setItem("plannerNotifCats", JSON.stringify(cur));
-    const map = schedMapRead();
-    const kill = [];
-    for (const id in map) {
-      const it = itemByRef(map[id].for);
-      if (!it || !readNotifCats()[kindOf(it)]) kill.push(+id);
-    }
-    for (const id of kill) delete map[id];
-    schedMapWrite(map);
-    notifCancel(kill);
-    scheduleAllUpcoming();
-    refreshNotifLbls();
-    toast("Reminder kinds saved.");
-  };
+  document.querySelectorAll("#notifKindsChips button").forEach(b2 => {
+    b2.onclick = () => {
+      if (!notifOn()) { toast("Turn Reminders on first.", true); return; }
+      const k = b2.dataset.kind;
+      const cur = readNotifCats();
+      cur[k] = !cur[k];
+      localStorage.setItem("plannerNotifCats", JSON.stringify(cur));
+      const map = schedMapRead();
+      const kill = [];
+      for (const id in map) {
+        const it = itemByRef(map[id].for);
+        if (!it || !readNotifCats()[kindOf(it)]) kill.push(+id);
+      }
+      for (const id of kill) delete map[id];
+      schedMapWrite(map);
+      notifCancel(kill);
+      scheduleAllUpcoming();
+      refreshNotifLbls();
+      toast(cur[k] ? "Reminders about " + kindPlural(k) + " on." : "Reminders about " + kindPlural(k) + " off.");
+    };
+  });
+  function kindPlural(k) { return { task:"to-dos", event:"events", deadline:"deadlines", habit:"habits" }[k] || k; }
 
   /* My account \u2014 a plain sign-in on your own sync server. No Google needed. */
   const acctUrlKey = "acctServerUrl", acctUserKey = "acctUser", acctTokenKey = "acctToken";
