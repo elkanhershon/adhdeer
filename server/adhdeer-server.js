@@ -23,6 +23,42 @@ const KEY_FILE = path.join(DATA_DIR, "secret.key");
 const TOKEN_DAYS = 180;
 const MAX_BODY = 2 * 1024 * 1024; // 2 MB — a planner backup is a few KB
 
+// The web app itself lives in www/ next to this file, so the same server
+// also serves https://<host>/ as an installable web app (iPhone: Add to Home
+// Screen). Only GET requests for files inside www/ are served - no listing,
+// no traversal, and /api routes always win.
+const WWW_DIR = path.join(__dirname, "www");
+const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".md": "text/markdown; charset=utf-8"
+};
+function serveStatic(req, res, url) {
+  let rel = url === "/" ? "index.html" : url.slice(1);
+  try { rel = decodeURIComponent(rel); } catch (e) { return false; }
+  const file = path.normalize(path.join(WWW_DIR, rel));
+  if (!file.startsWith(WWW_DIR + path.sep)) return false;
+  let st;
+  try { st = fs.statSync(file); } catch (e) { return false; }
+  if (!st.isFile()) return false;
+  const ctype = MIME[path.extname(file).toLowerCase()];
+  if (!ctype) return false;
+  const nocache = path.basename(file) === "sw.js" || ctype.startsWith("text/html");
+  res.writeHead(200, {
+    "Content-Type": ctype,
+    "Content-Length": st.size,
+    "Cache-Control": nocache ? "no-cache" : "public, max-age=86400"
+  });
+  fs.createReadStream(file).pipe(res);
+  return true;
+}
+
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function loadSecret() {
@@ -149,7 +185,7 @@ const server = http.createServer(async (req, res) => {
       return res.end();
     }
 
-    if (req.method === "GET" && (url === "/" || url === "/healthz")) {
+    if (req.method === "GET" && url === "/healthz") {
       return send(res, 200, { ok: true, app: "ADHdeer sync server", endpoints: ["/api/register", "/api/login", "/api/data"] });
     }
 
@@ -206,6 +242,8 @@ const server = http.createServer(async (req, res) => {
       writeUser(rec);
       return send(res, 200, { ok: true, savedAt: rec.data.savedAt });
     }
+
+    if (req.method === "GET" && serveStatic(req, res, url)) return;
 
     return send(res, 404, { error: "Not found" });
   } catch (e) {
