@@ -241,6 +241,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .view-switch button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tb-tools{display:contents}
 #calAddBtn{display:none}
+.pool-nudge{width:100%;background:var(--accent);color:var(--accent-ink);border:0;
+  border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:6px 0;cursor:pointer;text-align:left}
+.block.dragging{z-index:5;box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:.92;cursor:grabbing}
 .cal-outer{flex:1;overflow:auto;min-height:0;padding:8px 16px}
 .hour-head,.cal-head-days{display:grid;grid-template-columns:64px 1fr}
 .wk-heads,.wk-body{display:grid;grid-template-columns:64px repeat(7,1fr)}
@@ -295,9 +298,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .wk-day .block .b-time{font-size:13.5px}
 
 /* Month */
-.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;grid-auto-rows:minmax(96px,1fr)}
 .month-cell{
-  min-height:110px;border:2px solid var(--line);border-radius:12px;
+  min-height:0;min-width:0;overflow:hidden;border:2px solid var(--line);border-radius:12px;
   padding:6px;display:flex;flex-direction:column;gap:4px;background:var(--card);
   cursor:pointer;
 }
@@ -309,7 +312,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   min-width:28px;text-align:center}
 .m-chip{
   font-size:15px;padding:2px 8px;border-radius:8px;overflow:hidden;
-  white-space:normal;border-left:5px solid;
+  white-space:nowrap;text-overflow:ellipsis;min-width:0;border-left:5px solid;
 }
 .m-chip.c-task{background:var(--task-bg);border-color:var(--task-edge)}
 .m-chip.c-evt{background:var(--evt-bg);border-color:var(--evt-edge)}
@@ -419,23 +422,18 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 </head>
 <body>
 
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
-  <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></symbol>
-  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></symbol>
-  <symbol id="i-chev-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
-  <symbol id="i-chev-up" viewBox="0 0 24 24"><polyline points="6 15 12 9 18 15"/></symbol>
-  <symbol id="i-chev-left" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
-  <symbol id="i-chev-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
-  <symbol id="i-repeat" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
-  <symbol id="i-star" viewBox="0 0 24 24"><polygon fill="currentColor" stroke="currentColor" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
-  <symbol id="i-staro" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
-  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
-  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-plus" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="5" y="1" width="2" height="1"/><rect x="5" y="2" width="2" height="1"/><rect x="5" y="3" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="0" y="5" width="12" height="1"/><rect x="0" y="6" width="12" height="1"/><rect x="5" y="7" width="2" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="5" y="9" width="2" height="1"/><rect x="5" y="10" width="2" height="1"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="2" y="0" width="2" height="1"/><rect x="8" y="0" width="2" height="1"/><rect x="2" y="1" width="2" height="1"/><rect x="8" y="1" width="2" height="1"/><rect x="1" y="2" width="10" height="1"/><rect x="1" y="3" width="10" height="1"/><rect x="1" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="1" y="5" width="2" height="1"/><rect x="9" y="5" width="2" height="1"/><rect x="1" y="6" width="2" height="1"/><rect x="4" y="6" width="2" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="1" y="7" width="2" height="1"/><rect x="9" y="7" width="2" height="1"/><rect x="1" y="8" width="10" height="1"/></symbol>
+    <symbol id="i-list" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="0" y="1" width="2" height="1"/><rect x="6" y="1" width="6" height="1"/><rect x="0" y="2" width="2" height="1"/><rect x="6" y="2" width="6" height="1"/><rect x="0" y="4" width="2" height="1"/><rect x="6" y="4" width="6" height="1"/><rect x="0" y="5" width="2" height="1"/><rect x="6" y="5" width="6" height="1"/><rect x="0" y="7" width="2" height="1"/><rect x="6" y="7" width="6" height="1"/><rect x="0" y="8" width="2" height="1"/><rect x="6" y="8" width="6" height="1"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="4" y="0" width="4" height="1"/><rect x="2" y="1" width="6" height="1"/><rect x="1" y="2" width="5" height="1"/><rect x="1" y="3" width="4" height="1"/><rect x="1" y="4" width="3" height="1"/><rect x="1" y="5" width="3" height="1"/><rect x="1" y="6" width="3" height="1"/><rect x="1" y="7" width="3" height="1"/><rect x="1" y="8" width="4" height="1"/><rect x="1" y="9" width="5" height="1"/><rect x="2" y="10" width="6" height="1"/><rect x="4" y="11" width="4" height="1"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="1" y="0" width="2" height="1"/><rect x="5" y="0" width="2" height="1"/><rect x="9" y="0" width="2" height="1"/><rect x="0" y="1" width="4" height="1"/><rect x="5" y="1" width="2" height="1"/><rect x="9" y="1" width="2" height="1"/><rect x="0" y="2" width="4" height="1"/><rect x="5" y="2" width="2" height="1"/><rect x="9" y="2" width="2" height="1"/><rect x="1" y="3" width="2" height="1"/><rect x="5" y="3" width="2" height="1"/><rect x="9" y="3" width="2" height="1"/><rect x="1" y="4" width="2" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="9" y="4" width="2" height="1"/><rect x="1" y="5" width="2" height="1"/><rect x="4" y="5" width="4" height="1"/><rect x="9" y="5" width="2" height="1"/><rect x="1" y="6" width="2" height="1"/><rect x="4" y="6" width="4" height="1"/><rect x="9" y="6" width="2" height="1"/><rect x="1" y="7" width="2" height="1"/><rect x="5" y="7" width="2" height="1"/><rect x="9" y="7" width="2" height="1"/><rect x="1" y="8" width="2" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="9" y="8" width="2" height="1"/><rect x="1" y="9" width="2" height="1"/><rect x="5" y="9" width="6" height="1"/><rect x="1" y="10" width="2" height="1"/><rect x="5" y="10" width="6" height="1"/><rect x="1" y="11" width="2" height="1"/><rect x="5" y="11" width="2" height="1"/><rect x="9" y="11" width="2" height="1"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="3" y="0" width="6" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="9" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="5" y="2" width="2" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="5" y="3" width="2" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="5" y="5" width="6" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="1" y="8" width="1" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="3" y="10" width="6" height="1"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 16 16" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="14" y="0" width="2" height="1"/><rect x="13" y="1" width="3" height="1"/><rect x="1" y="2" width="3" height="1"/><rect x="12" y="2" width="3" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="11" y="3" width="3" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="4" y="4" width="2" height="1"/><rect x="10" y="4" width="3" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="4" y="5" width="3" height="1"/><rect x="9" y="5" width="3" height="1"/><rect x="1" y="6" width="3" height="1"/><rect x="5" y="6" width="6" height="1"/><rect x="6" y="7" width="4" height="1"/><rect x="6" y="8" width="4" height="1"/><rect x="1" y="9" width="3" height="1"/><rect x="5" y="9" width="6" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="4" y="10" width="3" height="1"/><rect x="9" y="10" width="3" height="1"/><rect x="0" y="11" width="1" height="1"/><rect x="4" y="11" width="2" height="1"/><rect x="10" y="11" width="3" height="1"/><rect x="0" y="12" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="11" y="12" width="3" height="1"/><rect x="1" y="13" width="3" height="1"/><rect x="12" y="13" width="3" height="1"/><rect x="13" y="14" width="3" height="1"/><rect x="14" y="15" width="2" height="1"/></symbol>
+    <symbol id="i-chev-down" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="0" y="2" width="2" height="1"/><rect x="10" y="2" width="2" height="1"/><rect x="1" y="3" width="2" height="1"/><rect x="9" y="3" width="2" height="1"/><rect x="2" y="4" width="2" height="1"/><rect x="8" y="4" width="2" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="7" y="5" width="2" height="1"/><rect x="4" y="6" width="4" height="1"/><rect x="5" y="7" width="2" height="1"/><rect x="5" y="8" width="2" height="1"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="6" y="1" width="2" height="1"/><rect x="5" y="2" width="2" height="1"/><rect x="4" y="3" width="2" height="1"/><rect x="3" y="4" width="2" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="4" y="6" width="2" height="1"/><rect x="5" y="7" width="2" height="1"/><rect x="6" y="8" width="2" height="1"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" stroke="none"><rect x="4" y="1" width="2" height="1"/><rect x="5" y="2" width="2" height="1"/><rect x="6" y="3" width="2" height="1"/><rect x="7" y="4" width="2" height="1"/><rect x="7" y="5" width="2" height="1"/><rect x="6" y="6" width="2" height="1"/><rect x="5" y="7" width="2" height="1"/><rect x="4" y="8" width="2" height="1"/></symbol>
+  </svg>
 </svg>
 
 <!-- TOP BAR -->
@@ -477,24 +475,27 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           <input type="number" id="durMinutes" min="0" max="55" step="5" value="30" title="Minutes">
           <span class="hint">minutes</span>
         </div>
-        <div class="day-chips" id="durChips" aria-label="Common lengths">
-          <button type="button" data-min="15">15m</button>
-          <button type="button" data-min="30">30m</button>
-          <button type="button" data-min="45">45m</button>
-          <button type="button" data-min="60">1h</button>
-          <button type="button" data-min="90">1½h</button>
-          <button type="button" data-min="120">2h</button>
-        </div>
       </div>
 
       <div class="field" id="addDayRow">
-        <label for="addDay">Which day? <span class="opt">(leave it on today unless this is for another day)</span></label>
+        <label for="addDay">Which day? <span class="opt">(optional - leave blank for auto-allocation)</span></label>
         <input type="date" id="addDay">
         <div class="day-chips" id="addDayChips" aria-label="Quick days">
           <button type="button" data-plus="0">Today</button>
           <button type="button" data-plus="1">Tomorrow</button>
           <button type="button" data-plus="7">Next week</button>
         </div>
+      </div>
+
+      <div class="field" id="repeatRow">
+        <label for="taskRepeat">Repeats?</label>
+        <select id="taskRepeat">
+          <option value="" selected>Doesn't repeat (one-off)</option>
+          <option value="daily">Every day</option>
+          <option value="weekly">Every week</option>
+          <option value="monthly">Every month</option>
+          <option value="yearly">Every year</option>
+        </select>
       </div>
 
       <div class="field" id="fixedTimeRow">
@@ -599,6 +600,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     </details>
 
     <div class="side-scroll">
+      <button class="pool-nudge" id="poolNudgeList" style="display:none" aria-label="Fill this week"></button>
       <div class="panel" id="poolPanel" style="display:none">
         <div class="panel-head">Waiting for later this week <span class="count" id="poolCount"></span></div>
         <div class="panel-body" id="poolList"></div>
@@ -634,6 +636,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       <button class="btn-quiet" id="calAddBtn" aria-label="Add something on this day">+</button>
     </div>
     <div class="cal-outer" id="calOuter">
+      <button class="pool-nudge" id="poolNudgeCal" style="display:none" aria-label="Fill this week"></button>
       <div class="cal-head-days" id="calHead" aria-hidden="true"></div>
       <div id="calScroll"></div>
     </div>
@@ -655,6 +658,23 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     <div class="dialog-foot">
       <button class="btn-quiet" id="modalAddStep">Add a step</button>
       <button class="btn" id="modalConfirm">Put steps in my plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK EDIT (in the calendar) -->
+<div class="backdrop" id="calEditBackdrop">
+  <div class="mini-dialog" role="dialog" aria-modal="true" aria-labelledby="calEditTitle">
+    <div class="dialog-head"><h2 id="calEditTitle">Edit</h2><button class="icon-btn" id="calEditClose" aria-label="Close">&#10005;</button></div>
+    <div class="field"><label for="calEditName">Name</label><input type="text" id="calEditName" autocomplete="off"></div>
+    <div class="row">
+      <div class="field" style="flex:1"><label for="calEditTime">Start time</label><input type="time" id="calEditTime"></div>
+      <div class="field" style="flex:1"><label for="calEditDur">Length (minutes)</label><input type="number" id="calEditDur" min="5" step="5"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-quiet" id="calEditDel">&#10095; Remove</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="calEditSave">Save</button>
     </div>
   </div>
 </div>
@@ -1048,6 +1068,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     const isEvent = entryType === "event";
     const dayKey = $("addDay").value || currentDate;
     const daySuffix = dayKey === currentDate ? "" : " Drop it's on " + fmtDay(dayKey) + ".";
+    const rep = $("taskRepeat").value;
     if (isPastDay(dayKey)) { toast("That day has already happened — go to today or a future day first.", true); return; }
     const title = $("taskTitle").value.trim();
     if (!title) { toast(isEvent ? "Give the event a name first." : "Say what needs doing first.", true); return; }
@@ -1062,10 +1083,14 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       if (start < DAY_START || start + duration > DAY_END) { toast("That's outside the hours your calendar shows ("+fmtTime(DAY_START)+"–"+fmtTime(DAY_END)+"). Widen them in Settings.", true); return; }
       if (overlaps(itemsFor(dayKey), start, start+duration)) { toast("That time is already taken by something else.", true); return; }
       if (isEvent) {
-        itemsFor(dayKey).push({ id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details, mine:true });
+        const baseItem = { id:uid(), title, duration, time:start, kind:"event", eventType:$("eventType").value, customLabel:$("eventCustomLabel").value.trim(), done:false, important:false, parent:null, details, mine:true };
+        itemsFor(dayKey).push(baseItem);
+        applyRepeat(baseItem, rep, dayKey);
         toast("Event added: \""+title+"\" at "+fmtTime(start)+"."+daySuffix);
       } else {
-        itemsFor(dayKey).push({ id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details, mine:true });
+        const baseItem = { id:uid(), title, duration, time:start, kind:"appt", done:false, important:false, parent:null, details, mine:true };
+        itemsFor(dayKey).push(baseItem);
+        applyRepeat(baseItem, rep, dayKey);
         toast("Fixed in place: \""+title+"\" at "+fmtTime(start)+"."+daySuffix);
       }
     } else {
@@ -1073,7 +1098,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       const from = Math.max(wf, slotFloor(dayKey));
       const slot = findFreeSlot(itemsFor(dayKey), duration, from, wt);
       if (slot == null) { toast("I couldn't find a free "+fmtDur(duration)+" gap between "+fmtTime(from)+" and "+fmtTime(wt)+". Try changing the hours under More options, or set a start time yourself.", true); return; }
-      itemsFor(dayKey).push({ id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true });
+      const baseItem = { id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true };
+      itemsFor(dayKey).push(baseItem);
+      applyRepeat(baseItem, rep, dayKey);
       toast("\""+title+"\" slotted in at "+fmtTime(slot)+"."+daySuffix);
     }
     clearForm(); save(); render();
@@ -1081,7 +1108,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
 
   function clearForm() {
-    $("taskTitle").value = ""; $("taskDetails").value = ""; $("taskTime").value = ""; $("addDay").value = currentDate;
+    $("taskTitle").value = ""; $("taskDetails").value = ""; $("taskTime").value = ""; $("addDay").value = ""; $("taskRepeat").value = "";
   }
 
   function addToPool() {
@@ -1107,11 +1134,33 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     const [dwf, dwt] = currentWindowChoice();
     const item = { id:uid(), title, kind:"deadline", dueDate:date, dueTime, done:false, important:false, parent:null, slotFrom:dwf, slotTo:dwt, mine:true };
     itemsFor(date).push(item);
+    applyRepeat(item, $("taskRepeat").value, date);
     clearForm(); save(); render();
     if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
     toast("Deadline: \""+title+"\" due "+fmtDue(date, dueTime)+".");
     return item;
   }
+
+  function repeatLabel(r2) { return { daily:"daily", weekly:"weekly", monthly:"monthly", yearly:"yearly" }[r2] || r2; }
+  function applyRepeat(base, rep, dayKey) {
+    if (!rep) return;
+    let d = parseDate(dayKey), made = 0;
+    const last = dateKey(addDays(parseDate(dayKey), 366));
+    while (made < 400) {
+      if (rep === "daily") d = addDays(d, 1);
+      else if (rep === "weekly") d = addDays(d, 7);
+      else if (rep === "monthly") { d = new Date(d); d.setMonth(d.getMonth() + 1); }
+      else if (rep === "yearly") { d = new Date(d); d.setFullYear(d.getFullYear() + 1); }
+      else break;
+      if (dateKey(d) > last) break;
+      const c = JSON.parse(JSON.stringify(base));
+      c.id = uid(); c.parent = base.id; c.done = false; c.repeats = rep;
+      itemsFor(dateKey(d)).push(c);
+      made++;
+    }
+    if (made) toast("'" + shortTitle(base.title, 30) + "'" + (daySuffixTxt(dayKey) || " is set") + " - repeats " + repeatLabel(rep) + "." );
+  }
+  function daySuffixTxt(k2) { return " on " + fmtDay(k2); }
 
   function planWindow(startKey, dueKey) {
     let from = startKey > dueKey ? dueKey : startKey;
@@ -1396,7 +1445,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("habitTime").style.display         = (isHabit && $("habitTimeMode").value === "fixed") ? "" : "none";
     $("fixedTimeRow").style.display      = isDue || isHabit ? "none" : "";
     $("addDayRow").style.display         = isDue || isHabit ? "none" : "";
-    if (!isDue && !isHabit) $("addDay").value = $("addDay").value || currentDate;
+    $("repeatRow").style.display         = (isHabit || editId) ? "none" : "";
     $("advBtn").style.display = entryType === "task" ? "" : "none";
     $("addBtn").textContent =
       isEvent ? "Add event" : isDue ? "Set deadline" : isHabit ? "Add habit" : "Add to my day";
@@ -1673,18 +1722,67 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     openEdit(found.item, key || found.key);
   }
 
+  /* ================= QUICK EDIT POPUP (calendar) ================= */
+  let calEditCtx = null;
+  function openCalEdit(item, key) {
+    calEditCtx = { id: item.id, key };
+    $("calEditTitle").textContent = "Edit: " + shortTitle(item.title, 26);
+    $("calEditName").value = item.title.replace(/^\[\d+\/\d+\]\s*/, "");
+    $("calEditTime").value = item.time != null ? fmtTime(item.time) : "";
+    $("calEditDur").value = item.duration;
+    $("calEditBackdrop").classList.add("open");
+  }
+  function closeCalEdit() { $("calEditBackdrop").classList.remove("open"); calEditCtx = null; }
+  $("calEditClose").onclick = closeCalEdit;
+  $("calEditSave").onclick = () => {
+    if (!calEditCtx) return;
+    const item = (state[calEditCtx.key] || []).find(x => x.id === calEditCtx.id);
+    if (!item) { closeCalEdit(); return; }
+    const title = $("calEditName").value.trim();
+    if (!title) { toast("Give it a name first.", true); return; }
+    item.title = title;
+    item.duration = Math.max(5, parseInt($("calEditDur").value, 10) || item.duration);
+    const t = $("calEditTime").value;
+    if (t) {
+      item.time = toMin(t);
+      if (overlaps(state[calEditCtx.key], item.time, item.time + item.duration, item.id)) { toast("That time is already taken by something else.", true); return; }
+      if (item.kind === "task") { item.kind = "appt"; delete item.slotFrom; delete item.slotTo; }
+    } else if (item.time != null) {
+      item.time = null;
+      if (item.kind === "appt") item.kind = "task";
+    }
+    closeCalEdit();
+    save(); render();
+    toast("Changes saved.");
+  };
+  $("calEditDel").onclick = () => {
+    if (!calEditCtx) return;
+    const ctx = calEditCtx;
+    $("calEditBackdrop").classList.remove("open"); calEditCtx = null;
+    const it = (state[ctx.key] || []).find(x => x.id === ctx.id);
+    if (it) confirmSeriesDelete(it, ctx.key);
+  };
+
   /* ================= DRAG TO MOVE (day view) ================= */
   let drag = null;
   function onBlockPointerDown(e, item) {
     if (e.target.closest(".b-del")) return;
     if (e.button !== 0 || view !== "day") return;
     if (isPastDay(currentDate)) { toast("Things can't be moved on a day that's gone.", true); return; }
-    drag = { item, startY: e.clientY, origTime: item.time, moved: false };
+    drag = { item, startY: e.clientY, origTime: item.time, moved: false, armed: false };
+    drag.timer = setTimeout(() => {
+      if (!drag || drag.item !== item) return;
+      drag.armed = true;
+      const el = document.querySelector('.block[data-id="' + item.id + '"]');
+      if (el) el.classList.add("dragging");
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 800);
     e.preventDefault();
   }
   window.addEventListener("pointermove", e => {
     if (!drag) return;
     const dy = e.clientY - drag.startY;
+    if (!drag.armed) { if (Math.abs(dy) > 10) { clearTimeout(drag.timer); drag = null; } return; }
     if (Math.abs(dy) < 8) return;
     drag.moved = true;
     let newTime = drag.origTime + Math.round(dy / PX_DAY);
@@ -1698,8 +1796,10 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     drag.newTime = newTime;
   });
   window.addEventListener("pointerup", () => {
-    if (!drag) { drag = null; return; }
-    if (drag.moved && drag.newTime != null && drag.newTime !== drag.origTime) {
+    if (!drag) return;
+    clearTimeout(drag.timer);
+    document.querySelectorAll(".block.dragging").forEach(el => el.classList.remove("dragging"));
+    if (drag.armed && drag.moved && drag.newTime != null && drag.newTime !== drag.origTime) {
       const item = drag.item;
       if (overlaps(items(), drag.newTime, drag.newTime + item.duration, item.id)) {
         toast("That spot is taken. Try another gap, or press Rearrange the day to shuffle things around.", true);
@@ -1709,7 +1809,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         save();
       }
     } else if (!drag.moved) {
-      confirmSeriesEdit(drag.item, currentDate)
+      openCalEdit(drag.item, currentDate)
     }
     drag = null;
     render();
@@ -1799,7 +1899,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       '<div class="title">' + esc(shortTitle(i.title, 64)) + '</div>' +
       '<div class="meta">' + kindName + " · " + when + '</div>' +
       (i.parent ? '<div class="meta">1 step of a split task</div>' : '');
-    main.onclick = () => { confirmSeriesEdit(i, currentDate); };
+    main.onclick = () => { openEdit(i, currentDate); };
     main.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); main.onclick(); } };
 
     const del = document.createElement("button");
@@ -2005,10 +2105,11 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         b.style.height = Math.max(22, i.duration * PX_WEEK - 3) + "px";
         b.innerHTML = '<div class="b-title">' + esc(shortTitle(i.title, 20)) + '</div>';
         b.title = fmtTime(i.time) + " – " + fmtTime(i.time + i.duration) + " — " + i.title;
-        b.onclick = ev => { ev.stopPropagation(); confirmSeriesEdit(i, key); };
+        b.onclick = ev => { ev.stopPropagation(); openCalEdit(i, key); };
         inner.appendChild(b);
       });
       day.appendChild(inner);
+      day.onclick = () => { currentDate = key; view = "day"; setViewButtons(); render(); };
       row.appendChild(day);
     }
     scroller.appendChild(row);
@@ -2019,8 +2120,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   /* ================= RENDER: MONTH ================= */
   function renderMonth(head, outer) {
     head.innerHTML = "";
-    head.style.gridTemplateColumns = "64px repeat(7,1fr)";
-    const gutter = document.createElement("div"); head.appendChild(gutter);
+    head.style.gridTemplateColumns = "repeat(7,1fr)";
     dayNames.forEach(dn => {
       const h = document.createElement("div");
       h.textContent = dn;
@@ -2070,7 +2170,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           chip.onclick = ev => { ev.stopPropagation(); toggleHabit(i.habitId, key); };
         } else {
           chip.title = fmtTime(i.time) + " — tap to edit";
-          chip.onclick = ev => { ev.stopPropagation(); confirmSeriesEdit(i, key); };
+          chip.onclick = ev => { ev.stopPropagation(); openCalEdit(i, key); };
         }
         cell.appendChild(chip);
         shown++;
@@ -2090,7 +2190,17 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     outer.appendChild(grid);
   }
 
-  /* ================= RENDER ROOT ================= */
+  function updatePoolNudge() {
+    const show = weekPool.length > 0;
+    ["poolNudgeList", "poolNudgeCal"].forEach(id2 => {
+      const el = $(id2);
+      if (!el) return;
+      el.style.display = show ? "" : "none";
+      if (show) el.textContent = weekPool.length + " waiting for later this week - Fill this week";
+      el.onclick = packWeek;
+    });
+  }
+
   function render() {
     syncHabitRange();
     // Sidebar heading
@@ -2101,7 +2211,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       view === "day" ? d.toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" })
       : view === "week" ? "Week of " + d.toLocaleDateString(undefined, { day:"numeric", month:"long" })
       : d.toLocaleDateString(undefined, { month:"long", year:"numeric" });
-    renderTodo(); renderPool(); renderHabits();
+    renderTodo(); renderPool(); renderHabits(); updatePoolNudge();
     const head = $("calHead"), outer = $("calScroll");
     if (view === "day") renderDay(head, outer);
     else if (view === "week") renderWeek(head, outer);
@@ -2174,12 +2284,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     applyEntryType();
   };
   $("poolBtn").onclick = addToPool;
-  document.querySelectorAll("#durChips button").forEach(b2 => { b2.onclick = () => {
-    const m = +b2.dataset.min;
-    $("durHours").value = Math.floor(m / 60);
-    $("durMinutes").value = m % 60;
-    $("taskTitle").focus();
-  }; });
   const HABIT_PRESETS = { all:[0,1,2,3,4,5,6], weekdays:[0,1,2,3,4], weekends:[5,6], none:[] };
   document.querySelectorAll("#habitPresets button").forEach(b2 => { b2.onclick = () => {
     const days = HABIT_PRESETS[b2.dataset.preset];
@@ -2249,6 +2353,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       $("choiceBackdrop").classList.remove("open");
       $("guideBackdrop").classList.remove("open");
       $("toolsBackdrop").classList.remove("open");
+      $("calEditBackdrop").classList.remove("open");
       if (editId) cancelEdit();
       return;
     }
