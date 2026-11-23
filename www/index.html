@@ -2845,7 +2845,22 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
           localStorage.setItem(acctTokenKey, reg.token);
           toast("Account made \u2014 welcome, " + un + "!");
           acctUpload(true);
-        } catch (e2) { toast("Creating the account failed (" + e2.message + ").", true); return; }
+        } catch (e2) {
+          if (e2.code === "invite-failed") {
+            const code = prompt("This server needs an invite code to make an account:", "");
+            if (code === null) return;
+            if (!code.trim()) { toast("Please type the invite code your server owner gave you.", true); return; }
+            try {
+              const reg = await acctRequest("/api/register", { user: un, pass, invite: code.trim() });
+              localStorage.setItem(acctTokenKey, reg.token);
+              toast("Account made \u2014 welcome, " + un + "!");
+              acctUpload(true);
+            } catch (e3) { toast("Creating the account failed (" + e3.message + ").", true); return; }
+          } else {
+            toast("Creating the account failed (" + e2.message + ").", true);
+            return;
+          }
+        }
       } else if (e.code === "bad-pass") {
         toast("That password doesn't match \"" + un + "\". Try again.", true); return;
       } else {
