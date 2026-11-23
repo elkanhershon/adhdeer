@@ -113,6 +113,33 @@ function readBody(req, limit) {
 
 const USER_RE = /^[a-zA-Z0-9._-]{1,32}$/;
 
+// Optional invite code: set INVITE_CODE (e.g. -e INVITE_CODE=share-the-cheese)
+// to require it on /api/register; unset means anyone may sign up.
+const INVITE_CODE = String(process.env.INVITE_CODE || "").trim();
+
+// Simple per-client throttle for sign-in / sign-up attempts (memory only).
+const attempts = new Map();
+let lastSweep = Date.now();
+function clientIp(req) {
+  return String(req.headers["cf-connecting-ip"] || req.socket.remoteAddress || "?").split(",")[0].trim();
+}
+function tooFast(req, max, windowMs) {
+  const now = Date.now();
+  if (now - lastSweep > 300000) {
+    lastSweep = now;
+    for (const [k, arr] of attempts) {
+      const alive = arr.filter(t => now - t < windowMs);
+      if (alive.length) attempts.set(k, alive); else attempts.delete(k);
+    }
+  }
+  const ip = clientIp(req);
+  const arr = (attempts.get(ip) || []).filter(t => now - t < windowMs);
+  if (arr.length >= max) { attempts.set(ip, arr); return true; }
+  arr.push(now);
+  attempts.set(ip, arr);
+  return false;
+}
+
 const server = http.createServer(async (req, res) => {
   const url = (req.url || "").split("?")[0];
 
@@ -130,6 +157,7 @@ const server = http.createServer(async (req, res) => {
       let body;
       try { body = JSON.parse(await readBody(req, MAX_BODY) || "{}"); }
       catch (e) { return send(res, 400, { error: "Bad JSON body" }); }
+      if (tooFast(req, 10, 600000)) return send(res, 429, { error: "Too many attempts - wait a few minutes and try again.", code: "slow-down" });
       const user = String(body.user || "").trim(), pass = String(body.pass || "");
       if (!USER_RE.test(user)) return send(res, 400, { error: "Usernames can use letters, numbers, dots, dashes and underscores." });
       if (pass.length < 6) return send(res, 400, { error: "Passwords need at least 6 characters." });
@@ -137,6 +165,8 @@ const server = http.createServer(async (req, res) => {
 
       if (url === "/api/register") {
         if (existing) return send(res, 409, { error: "That name is already taken.", code: "taken" });
+        if (INVITE_CODE && String(body.invite || "").trim() !== INVITE_CODE)
+          return send(res, 403, { error: "This server needs an invite code to make an account.", code: "invite-failed" });
         const { salt, hash } = await scryptHash(pass);
         writeUser({ user, salt, hash, data: null, savedAt: null });
         return send(res, 200, { token: issueToken(user) });
