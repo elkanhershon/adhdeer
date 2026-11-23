@@ -2661,6 +2661,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   function kindPlural(k) { return { task:"to-dos", event:"events", deadline:"deadlines", habit:"habits" }[k] || k; }
 
   /* My account \u2014 a plain sign-in on your own sync server. No Google needed. */
+  const DEFAULT_ACCT_SERVER = "https://adhdeer.app";
   const acctUrlKey = "acctServerUrl", acctUserKey = "acctUser", acctTokenKey = "acctToken";
   function acctSignedIn() { return !!(localStorage.getItem(acctTokenKey) && localStorage.getItem(acctUserKey)); }
   function refreshAcctLbl() {
@@ -2668,7 +2669,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("acctAutoLbl").textContent = acctSignedIn() && localStorage.getItem("plannerAutoSync") !== "off" ? "on" : "off";
   }
   async function acctRequest(path, body, method) {
-    const base = (localStorage.getItem(acctUrlKey) || "").replace(/\/+$/, "");
+    const base = (localStorage.getItem(acctUrlKey) || DEFAULT_ACCT_SERVER).replace(/\/+$/, "");
     if (!base) throw new Error("no sync server set");
     const headers = { "Content-Type": "application/json" };
     const tok = localStorage.getItem(acctTokenKey);
@@ -2717,11 +2718,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     refreshStaleInfo();
   }
   $("acctBtn").onclick = async () => {
-    const url = prompt("Your ADHdeer sync server address (a small private server you run yourself \u2014 no Google account involved):", localStorage.getItem(acctUrlKey) || "");
-    if (url === null) return;
-    const clean = url.trim().replace(/\/+$/, "");
-    if (!/^https?:\/\/.+/.test(clean)) { toast("That doesn't look like a web address \u2014 it should start http:// or https://.", true); return; }
-    localStorage.setItem(acctUrlKey, clean);
+    if (!localStorage.getItem(acctUrlKey)) localStorage.setItem(acctUrlKey, DEFAULT_ACCT_SERVER);
     const user = prompt("Pick a username:", localStorage.getItem(acctUserKey) || "");
     if (user === null) return;
     const un = user.trim();
