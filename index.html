@@ -106,7 +106,7 @@ img{max-width:100%}
 .btn-quiet:hover{border-color:var(--accent)}
 .btn-quiet[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
 .icon-btn{
-  min-width:44px;min-height:44px;border-radius:12px;border:2px solid var(--line);
+  min-width:44px;min-height:44px;flex:0 0 auto;border-radius:12px;border:2px solid var(--line);
   background:var(--card);display:inline-flex;align-items:center;justify-content:center;
   font-weight:700;
 }
@@ -126,10 +126,11 @@ img{max-width:100%}
 
 /* ================= TOP BAR ================= */
 .topbar{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;
   padding:14px 20px;background:var(--accent);color:var(--accent-ink);
 }
-.brand{display:flex;align-items:flex-end;gap:10px;margin-right:auto;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;flex:0 0 auto;min-width:0}
+.brand-name{font-weight:800;font-size:20px;letter-spacing:.3px;line-height:1}
 .brand h1{display:flex;align-items:center;margin:0;font-size:22px}
 .logo{height:28px;width:auto;display:block;max-width:none}
 .topbar .icon-btn{background:transparent;border-color:var(--accent-ink)}
@@ -404,7 +405,25 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .note-meta{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .note-meta span{color:var(--soft);font-weight:400;font-size:15px;flex:0 0 auto}
 .note-snippet{color:var(--soft);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#noteBody{min-height:46vh;flex:1 1 auto;resize:none;font-family:ui-monospace,Consolas,Menlo,monospace;line-height:1.55}
+#noteBody{min-height:46vh;flex:1 1 auto;resize:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.55}
+.md-render{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.nt-toolbar{display:flex;flex-wrap:wrap;gap:6px}
+.nt-btn{
+  min-height:34px;min-width:36px;padding:4px 8px;border-radius:9px;border:2px solid var(--line);
+  background:var(--card);color:var(--ink);font-weight:700;font-size:13px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.nt-btn:active{border-color:var(--accent)}
+.md-render mark{background:#ffe98a;color:inherit;border-radius:3px;padding:0 3px}
+.md-render h1{font-size:1.5em;margin:.5em 0 .2em}
+.md-render h2{font-size:1.3em;margin:.5em 0 .2em}
+.md-render h3{font-size:1.12em;margin:.5em 0 .2em}
+.md-render h4{font-size:1em;margin:.5em 0 .2em}
+.md-render table{border-collapse:collapse;margin:.4em 0;font-size:.95em}
+.md-render th,.md-render td{border:2px solid var(--line);padding:4px 10px;text-align:left}
+.md-render .md-fn{font-size:.85em;color:var(--soft);margin:.15em 0}
+.md-render sup a{color:var(--accent);text-decoration:none}
+.md-render h2 + table, .md-render h3 + table{margin-top:.15em}
 .sheet-actions{display:flex;gap:10px;align-items:center}
 .mode-switch{display:flex;gap:8px;flex-wrap:wrap}
 .mode-switch button{border:2px solid var(--line);border-radius:999px;background:var(--card);padding:8px 14px;font-weight:700;min-height:40px}
@@ -460,6 +479,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   .topbar{padding:8px 12px;gap:8px;flex-wrap:nowrap}
   .topbar .icon-btn,.topbar .btn-quiet{min-height:40px;min-width:40px}
   .logo{height:24px}
+  .brand-name{font-size:16px}
+  .nt-btn{min-height:38px;min-width:40px}
 }
 </style>
 </head>
@@ -479,19 +500,20 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     <symbol id="i-chev-right" viewBox="0 0 24 24" shape-rendering="crispEdges" fill="currentColor"><path d="M16 13v-2h-2v2h2Zm-2-2V9h-2v2h2Zm0 4v-2h-2v2h2Zm-2-6V7h-2v2h2Zm0 8v-2h-2v2h2ZM10 7V5H8v2h2Zm0 12v-2H8v2h2Z"/></symbol>
     <symbol id="i-note" viewBox="0 0 24 24" shape-rendering="crispEdges" fill="currentColor"><path d="M2 4h2v16H2zm18 0h2v12h-2zM4 2h16v2H4zm14 14h2v2h-2zm-2 2h2v2h-2zM4 20h12v2H4zm10-8h6v2h-6zm-2 2h2v6h-2z"/></symbol>
     <symbol id="i-lists" viewBox="0 0 24 24" shape-rendering="crispEdges" fill="currentColor"><path d="M4 2h16v2H4zm2 5h2v2H6zm4 0h8v2h-8zm-4 4h2v2H6zm4 0h8v2h-8zm-4 4h2v2H6zm4 0h8v2h-8zm-6 5h16v2H4zM2 4h2v16H2zm18 0h2v16h-2z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" shape-rendering="crispEdges" fill="currentColor"><path d="M18 22H6v-2h12v2ZM6 20H4v-2h2v2Zm14 0h-2v-2h2v2ZM4 18H2V6h2v12Zm9 0h-2v-2h2v2Zm9 0h-2V6h2v12Zm-7-5h-2v-2h2v2Zm2-2h-2v-3h2v3Zm-2-3H9V8h6v2h-4V8ZM9 10H7V8h2v2Zm6-2H9V6h6v2ZM6 6H4V4h2v2Zm14 0h-2V4h2v2Zm-2-2H6V2h12v2Z"/></symbol>
   </svg>
 
 
 <!-- TOP BAR -->
 <header class="topbar container">
   <div class="brand">
-    <h1><img src="logo.png" alt="ADHdeer" class="logo"></h1>
+    <h1><img src="logo.png" alt="" class="logo"><span class="brand-name">ADHdeer</span></h1>
   </div>
   <button class="icon-btn" id="notesBtn" aria-label="Open your notes" title="Notes"><svg class="ic"><use href="#i-note"/></svg></button>
   <button class="icon-btn" id="listsBtn" aria-label="Open your lists" title="Lists"><svg class="ic"><use href="#i-lists"/></svg></button>
   <button class="icon-btn" id="themeBtn" aria-label="Switch between light and dark colours" title="Switch light / dark"><svg class="ic"><use href="#i-moon"/></svg></button>
   <button class="icon-btn" id="toolsBtn" aria-haspopup="menu" aria-label="Open the settings menu" title="Settings"><svg class="ic"><use href="#i-sliders"/></svg></button>
-  <button class="btn-quiet" id="helpBtn">Help</button>
+  <button class="icon-btn" id="helpBtn" aria-label="Help" title="Help"><svg class="ic"><use href="#i-help"/></svg></button>
 </header>
 
 <main class="app">
@@ -703,6 +725,20 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   <div class="sheet-body" id="notesList"></div>
   <div class="sheet-body" id="notesEditor" style="display:none">
     <input type="text" id="noteTitle" placeholder="Note title" autocomplete="off">
+    <div class="nt-toolbar" id="ntToolbar" aria-label="Formatting">
+      <button type="button" class="nt-btn" data-fmt="bold" title="Bold"><b>B</b></button>
+      <button type="button" class="nt-btn" data-fmt="italic" title="Italic"><i>I</i></button>
+      <button type="button" class="nt-btn" data-fmt="h1" title="Heading 1">H1</button>
+      <button type="button" class="nt-btn" data-fmt="h2" title="Heading 2">H2</button>
+      <button type="button" class="nt-btn" data-fmt="h3" title="Heading 3">H3</button>
+      <button type="button" class="nt-btn" data-fmt="h4" title="Heading 4">H4</button>
+      <button type="button" class="nt-btn" data-fmt="hl" title="Highlight"><mark>Hl</mark></button>
+      <button type="button" class="nt-btn" data-fmt="ul" title="Bullets">&#8226;</button>
+      <button type="button" class="nt-btn" data-fmt="ol" title="Numbers">1.</button>
+      <button type="button" class="nt-btn" data-fmt="check" title="Checkbox">&#9745;</button>
+      <button type="button" class="nt-btn" data-fmt="fn" title="Footnote">[^1]</button>
+      <button type="button" class="nt-btn" data-fmt="table" title="Table">&#8863; Table</button>
+    </div>
     <textarea id="noteBody" placeholder="Write freely - markdown works: # headings, **bold**, - lists, - [ ] checkboxes"></textarea>
     <div class="md-render" id="notePreviewArea" style="display:none"></div>
     <div class="sheet-actions">
@@ -3018,16 +3054,30 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   function mdRender(src) {
     const out = [];
     let openTag = null;
-    const closeOpen = () => { if (openTag) { out.push("</" + openTag + ">"); openTag = null; } };
+    const closeOpen = () => { if (!openTag) return; out.push(openTag === "table" ? "</tbody></table>" : "</" + openTag + ">"); openTag = null; };
     const inline = s => esc(s)
       .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
       .replace(/\*([^*]+)\*/g, "<i>$1</i>")
+      .replace(/==([^=]+)==/g, "<mark>$1</mark>")
+      .replace(/\[\^(\d+)\]/g, '<sup><a href="#fn$1">[$1]</a></sup>')
       .replace(/`([^`]+)`/g, "<code>$1</code>")
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    String(src).split(/\r?\n/).forEach(line => {
+
+String(src).split(/\r?\n/).forEach(line => {
       let m;
-      if ((m = line.match(/^\s*(#{1,3})\s+(.*)$/))) { closeOpen(); out.push("<h3>" + inline(m[2]) + "</h3>"); }
+      if ((m = line.match(/^\s*(#{1,4})\s+(.*)$/))) {
+        closeOpen();
+        const lvl = m[1].length;
+        out.push("<h" + lvl + ">" + inline(m[2]) + "</h" + lvl + ">");
+      }
       else if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { closeOpen(); out.push("<hr>"); }
+      else if ((m = line.match(/^\s*\|(.+)\|\s*$/)) && !/^\s*\|[\s:|-]+\|\s*$/.test(line)) {
+        if (openTag !== "table") { closeOpen(); out.push('<table class="md-table"><tbody>'); openTag = "table"; }
+        const cells = m[1].split("|").map(c => inline(c.trim()));
+        out.push("<tr>" + cells.map(c => "<td>" + c + "</td>").join("") + "</tr>");
+      }
+      else if (/^\s*\|[\s:|-]+\|\s*$/.test(line)) { /* table separator - skip */ }
+      else if ((m = line.match(/^\s*\[\^(\d+)\]:\s*(.*)$/))) { closeOpen(); out.push('<p class="md-fn" id="fn' + m[1] + '">^' + m[1] + " " + inline(m[2]) + "</p>"); }
       else if ((m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/))) {
         if (openTag !== "ul") { closeOpen(); out.push('<ul class="md-check">'); openTag = "ul"; }
         const on = m[1].toLowerCase() === "x";
@@ -3088,6 +3138,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("noteTitle").value = n.title || "";
     $("noteBody").value = n.body || "";
     $("notePreviewArea").style.display = "none";
+    $("noteBody").style.display = "";
+    $("ntToolbar").style.display = "";
     $("notePreview").textContent = "Preview";
     openEditorPane(true);
     $("noteTitle").focus();
@@ -3103,13 +3155,65 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   $("noteSave").onclick = () => { flushNote(); toast("Note saved."); };
   $("notePreview").onclick = () => {
     flushNote();
-    const area = $("notePreviewArea");
+    const area = $("notePreviewArea"), ta = $("noteBody"), tb = $("ntToolbar");
     if (area.style.display === "none") {
-      area.innerHTML = mdRender($("noteBody").value);
+      area.innerHTML = mdRender(ta.value);
       area.style.display = "";
+      ta.style.display = "none";
+      tb.style.display = "none";
       $("notePreview").textContent = "Edit";
-    } else { area.style.display = "none"; $("notePreview").textContent = "Preview"; }
+    } else { area.style.display = "none"; ta.style.display = ""; tb.style.display = ""; $("notePreview").textContent = "Preview"; }
   };
+  /* Formatting toolbar - inserts real markdown at the cursor */
+  function fmtSel(pre, post, ph) {
+    const ta = $("noteBody");
+    const st = ta.selectionStart, en = ta.selectionEnd;
+    const sel = ta.value.slice(st, en) || ph || "";
+    ta.setRangeText(pre + sel + (post || ""), st, en, "end");
+    ta.selectionStart = st + pre.length;
+    ta.selectionEnd = st + pre.length + sel.length;
+    ta.focus();
+    queueNoteSave();
+  }
+  function fmtLine(prefix, toggleOff) {
+    const ta = $("noteBody"), v = ta.value;
+    const st = ta.selectionStart;
+    const lineStart = v.lastIndexOf("\n", st - 1) + 1;
+    const at = lineStart + (v.slice(lineStart).match(/^\s*/) || [""])[0].length;
+    if (toggleOff && v.startsWith(prefix, at)) ta.setRangeText("", at, at + prefix.length, "end");
+    else if (toggleOff && v.startsWith(prefix.trim(), at)) ta.setRangeText("", at, at + prefix.trim().length, "end");
+    else ta.setRangeText(prefix, at, at, "end");
+    ta.focus();
+    queueNoteSave();
+  }
+  const fmtMap = {
+    bold: () => fmtSel("**", "**", "bold text"),
+    italic: () => fmtSel("*", "*", "italic text"),
+    hl: () => fmtSel("==", "==", "highlighted"),
+    h1: () => fmtLine("# ", true),
+    h2: () => fmtLine("## ", true),
+    h3: () => fmtLine("### ", true),
+    h4: () => fmtLine("#### ", true),
+    ul: () => fmtLine("- ", true),
+    ol: () => fmtLine("1. ", true),
+    check: () => fmtLine("- [ ] ", true),
+    fn: () => {
+      const ta = $("noteBody"), v = ta.value;
+      const used = (v.match(/\[\^(\d+)\]/g) || []).reduce((mx, s) => Math.max(mx, +s.slice(3, -1)), 0);
+      const n = used + 1;
+      fmtSel("", " [^" + n + "]", null);
+      if (!v.includes("[^" + n + "]:")) {
+        ta.value = ta.value.replace(/\s*$/, "") + "\n\n[^" + n + "]: the footnote text\n";
+        ta.selectionStart = ta.selectionEnd = ta.value.length;
+        ta.scrollTop = ta.scrollHeight;
+      }
+      queueNoteSave();
+    },
+    table: () => fmtSel("", "\n| Food | Price |\n| --- | --- |\n| cheese | \u00a32.50 |\n", null),
+  };
+  document.querySelectorAll("#ntToolbar .nt-btn").forEach(btn => {
+    btn.addEventListener("click", () => fmtMap[btn.dataset.fmt] && fmtMap[btn.dataset.fmt]());
+  });
   $("noteCopyMd").onclick = () => {
     flushNote();
     const n = notes.find(x => x.id === noteOpenId);
