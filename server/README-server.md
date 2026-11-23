@@ -13,6 +13,7 @@ nothing ever leaves your server.
 - `POST /api/login` — sign in, get a bearer token (valid 180 days)
 - `GET /api/data` — download your planner copy
 - `PUT /api/data` — upload your planner copy
+- `GET /` — serves the ADHdeer web app itself (see below)
 
 Passwords are hashed with scrypt. Bearer tokens are HMAC-signed with a secret
 key kept in `server/data/secret.key` (created on first run — keep this file
@@ -35,6 +36,26 @@ docker run -d --name adhdeer --restart unless-stopped -p 8787:8787 -v adhdeer-da
 
 Your data lives in the `adhdeer-data` Docker volume (or mount a folder and
 you'll see plain files like `data/<username>.json`).
+
+## The website version (iPhone, iPad, any browser)
+
+This same server hosts the whole ADHdeer app at `https://<your-domain>/` —
+so on an iPhone (or any browser) there is nothing to install from an app
+store. In Safari:
+
+1. Open `https://adhdeer.app`
+2. Tap the **Share** button, then **Add to Home Screen**
+3. Open ADHdeer from your home screen — it runs full-screen with its own
+   icon, and keeps working offline.
+
+Notes for the web version:
+
+- Your planner is stored in the browser, and Settings → My account syncs it
+  to this server exactly like the Android app.
+- Reminders work in Safari too, but only while the site is open (this is an
+  Apple limitation); the Android app can nudge you anytime.
+- The app files are served from `server/www/`; if you ever want to customise
+  them, that's the folder to edit and you rebuild the Docker image after.
 
 ## Using it from the app
 
