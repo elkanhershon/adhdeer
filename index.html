@@ -130,7 +130,6 @@ img{max-width:100%}
   padding:14px 20px;background:var(--accent);color:var(--accent-ink);
 }
 .brand{display:flex;align-items:center;gap:10px;margin-right:auto;flex:0 0 auto;min-width:0}
-.brand-name{font-weight:800;font-size:20px;letter-spacing:.3px;line-height:1}
 .brand h1{display:flex;align-items:center;margin:0;font-size:22px}
 .logo{height:28px;width:auto;display:block;max-width:none}
 .topbar .icon-btn{background:transparent;border-color:var(--accent-ink)}
@@ -206,6 +205,11 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
   border:2px solid var(--line);border-radius:14px;background:var(--bg);
 }
+.todo-item.k-task{box-shadow:inset 5px 0 0 var(--task-edge)}
+.todo-item.k-event{box-shadow:inset 5px 0 0 var(--evt-edge)}
+.todo-item.k-deadline{box-shadow:inset 5px 0 0 var(--dl-edge)}
+.todo-item.k-habit{box-shadow:inset 5px 0 0 var(--hab-edge)}
+.m-chip.b-done{text-decoration:line-through;opacity:.55}
 .todo-item .main{flex:1;min-width:0;cursor:pointer}
 .todo-item .title{font-weight:700;overflow-wrap:anywhere}
 .todo-item .meta{color:var(--soft);font-size:15px;overflow-wrap:anywhere}
@@ -285,6 +289,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .block.b-task{background:var(--task-bg);border-color:var(--task-edge)}
 .block.b-evt{background:var(--evt-bg);border-color:var(--evt-edge)}
 .block.b-hab{background:var(--hab-bg);border-color:var(--hab-edge)}
+.block.b-dl{background:var(--dl-bg);border-color:var(--dl-edge);padding:4px 8px}
 .block.b-done .b-title{text-decoration:line-through;opacity:.6}
 .block .b-del{opacity:.75}   /* always visible — no hover-only controls */
 .now-line{position:absolute;left:0;right:0;height:3px;background:var(--warn);z-index:5}
@@ -479,7 +484,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   .topbar{padding:8px 12px;gap:8px;flex-wrap:nowrap}
   .topbar .icon-btn,.topbar .btn-quiet{min-height:40px;min-width:40px}
   .logo{height:24px}
-  .brand-name{font-size:16px}
   .nt-btn{min-height:38px;min-width:40px}
 }
 </style>
@@ -507,7 +511,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 <!-- TOP BAR -->
 <header class="topbar container">
   <div class="brand">
-    <h1><img src="logo.png" alt="" class="logo"><span class="brand-name">ADHdeer</span></h1>
+    <h1><img src="logo.png" alt="ADHdeer" class="logo"></h1>
   </div>
   <button class="icon-btn" id="notesBtn" aria-label="Open your notes" title="Notes"><svg class="ic"><use href="#i-note"/></svg></button>
   <button class="icon-btn" id="listsBtn" aria-label="Open your lists" title="Lists"><svg class="ic"><use href="#i-lists"/></svg></button>
@@ -797,19 +801,58 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   </div>
 </div>
 
-<!-- QUICK EDIT (in the calendar) -->
-<div class="backdrop" id="calEditBackdrop">
-  <div class="mini-dialog" role="dialog" aria-modal="true" aria-labelledby="calEditTitle">
-    <div class="dialog-head"><h2 id="calEditTitle">Edit</h2><button class="icon-btn" id="calEditClose" aria-label="Close">&#10005;</button></div>
-    <div class="field"><label for="calEditName">Name</label><input type="text" id="calEditName" autocomplete="off"></div>
-    <div class="row">
-      <div class="field" style="flex:1"><label for="calEditTime">Start time</label><input type="time" id="calEditTime"></div>
-      <div class="field" style="flex:1"><label for="calEditDur">Length (minutes)</label><input type="number" id="calEditDur" min="5" step="5"></div>
+<!-- FULL EDIT (one place for everything) -->
+<div class="backdrop" id="editBackdrop">
+  <div class="mini-dialog" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="dialog-head"><h2 id="editTitle">Edit</h2><button class="icon-btn" id="editClose" aria-label="Close">&#10005;</button></div>
+    <div class="field"><label for="editName">Name</label><input type="text" id="editName" autocomplete="off"></div>
+    <div class="row" id="editDayRow">
+      <div class="field" style="flex:1"><label for="editDay">Day</label><input type="date" id="editDay"></div>
+      <div class="field" style="flex:1" id="editTimeField"><label for="editTime">Start time <span class="opt">(blank = auto)</span></label><input type="time" id="editTime"></div>
+    </div>
+    <div class="field" id="editDurationRow"><label for="editDurH">Length</label>
+      <div class="row">
+        <input type="number" id="editDurH" min="0" max="24" step="1" value="0" title="Hours">
+        <span class="hint">hours</span>
+        <input type="number" id="editDurM" min="0" max="55" step="5" value="30" title="Minutes">
+        <span class="hint">minutes</span>
+      </div>
+    </div>
+    <div class="field" id="editWinRow"><label for="editWindow">Time window to allocate it in:</label>
+      <select id="editWindow"><option value="default" selected>Usual hours (those you picked in settings)</option>
+<option value="workday">Work hours (9–5)</option>
+<option value="morning">Morning (6–12)</option>
+<option value="afternoon">Afternoon (12–6)</option>
+<option value="evening">Evening (5–11)</option>
+<option value="night">Late (8–midnight)</option>
+<option value="custom">My own hours…</option>
+</select>
+      <div class="row" id="editCustomWinRow" style="display:none">
+        <input type="time" id="editWinFrom" value="09:00" title="Not before">
+        <input type="time" id="editWinTo" value="22:00" title="Not after">
+      </div>
+    </div>
+    <div class="field" id="editEventTypeRow"><label for="editEventType">Event type</label>
+      <select id="editEventType"><option value="" selected>No label</option>
+<option value="meeting">Meeting</option>
+<option value="class">Class</option>
+<option value="gathering">Gathering</option>
+<option value="appointment">Appointment</option>
+<option value="custom">Something else…</option>
+</select>
+      <input type="text" id="editEventCustom" placeholder="Give it a name" style="display:none">
+    </div>
+    <div class="field" id="editDetailsRow"><label for="editDetails">Notes <span class="opt">(optional)</span></label><textarea id="editDetails" rows="2"></textarea></div>
+    <div class="row" style="align-items:center">
+      <button type="button" class="nt-btn" id="editImportant" aria-pressed="false" style="flex:0 0 auto">&#9733; Important</button>
+      <button type="button" class="nt-btn" id="editSpread" style="display:none;flex:0 0 auto">&#9000; Spread the work</button>
+      <span class="hint" id="editSeriesLbl"></span>
     </div>
     <div class="actions">
-      <button class="btn-quiet" id="calEditDel">&#10095; Remove</button>
+      <button class="btn-quiet" id="editDel">&#10095; Delete</button>
       <span style="flex:1"></span>
-      <button class="btn" id="calEditSave">Save</button>
+      <button class="btn-quiet" id="editCancel">Cancel</button>
+      <button class="btn" id="editSave">Save</button>
     </div>
   </div>
 </div>
@@ -1013,7 +1056,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   let entryType = (["task","event","deadline","habit"].indexOf(localStorage.getItem("plannerEntryType")) !== -1)
     ? localStorage.getItem("plannerEntryType") : "task";
   let modalCtx = null;                      // breakdown / deadline-planning dialog state
-  let editId = null, editKey = null, editGroupId = null;   // edit-in-form state (used by later chunks)
+/* (old edit-in-form state removed — editing now lives in one dialog) */
   let advanced = false;
 
   function dateKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -1031,6 +1074,11 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
   const dayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const isDeadline = i => i && i.kind === "deadline";
+  /* Colour follows what the thing IS (a to-do stays to-do coloured once it gets a time) */
+  function blockCls(i) {
+    const kind = i.kind === "appt" ? "task" : (i.kind === "event" ? "event" : (i.kind === "habit" ? "habit" : "task"));
+    return "block " + ({ task:"b-task", event:"b-evt", habit:"b-hab" }[kind] || "b-task") + (i.done ? " b-done" : "");
+  }
   function fmtDay(key) { return parseDate(key).toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" }); }
   const fmtDue = (key,mins) => fmtDay(key)+" "+fmtTime(mins);
   const effMin = i => i.kind === "deadline" ? i.dueTime : (i.time ?? 1e9);
@@ -1196,7 +1244,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 
   /* ================= ADDING THINGS ================= */
   function addTask() {
-    if (editId) { saveEdit(); return; }
     const details = $("taskDetails").value.trim();
     if (entryType === "deadline") { addDeadline(); return; }
     if (entryType === "habit")   { addHabit();   return; }
@@ -1230,13 +1277,31 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       }
     } else {
       const [wf, wt] = currentWindowChoice();
-      const from = Math.max(wf, slotFloor(dayKey));
-      const slot = findFreeSlot(itemsFor(dayKey), duration, from, wt);
-      if (slot == null) { toast("I couldn't find a free "+fmtDur(duration)+" gap between "+fmtTime(from)+" and "+fmtTime(wt)+". Try changing the hours under More options, or set a start time yourself.", true); return; }
-      const baseItem = { id:uid(), title, duration, time:slot, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true };
-      itemsFor(dayKey).push(baseItem);
-      applyRepeat(baseItem, rep, dayKey);
-      toast("\""+title+"\" slotted in at "+fmtTime(slot)+"."+daySuffix);
+      // Smart allocation: the chosen day first (its window, then wider hours);
+      // if the day is truly full, offer the first opening within two weeks.
+      let placed = null, widened = false;
+      let slot = findFreeSlot(itemsFor(dayKey), duration, Math.max(wf, slotFloor(dayKey)), wt);
+      if (slot == null) { slot = findFreeSlot(itemsFor(dayKey), duration, Math.max(DAY_START, wf), DAY_END); widened = true; }
+      if (slot != null) placed = { key: dayKey, time: slot };
+      if (!placed) {
+        const todayKey = dateKey(new Date());
+        const fromKey = dateKey(addDays(parseDate(dayKey), 1)) < todayKey ? todayKey : dateKey(addDays(parseDate(dayKey), 1));
+        for (let off = 0; off < 14 && !placed; off++) {
+          const k2 = dateKey(addDays(parseDate(fromKey), off));
+          slot = findFreeSlot(itemsFor(k2), duration, Math.max(wf, slotFloor(k2)), wt);
+          if (slot == null) slot = findFreeSlot(itemsFor(k2), duration, Math.max(DAY_START, wf), DAY_END);
+          if (slot != null) placed = { key: k2, time: slot };
+        }
+      }
+      if (!placed) { toast("Nothing fits for the next two weeks \u2014 try For later this week, a shorter length, or a set time.", true); return; }
+      const baseItem = { id:uid(), title, duration, time:placed.time, kind:"task", done:false, important:false, parent:null, details, slotFrom:wf, slotTo:wt, mine:true };
+      itemsFor(placed.key).push(baseItem);
+      applyRepeat(baseItem, rep, placed.key);
+      clearForm(); save(); render();
+      toast("\""+title+"\" slotted into "+fmtDay(placed.key)+" at "+fmtTime(placed.time)+
+            (widened && placed.key === dayKey ? " (the "+fmtTime(wf)+"\u2013"+fmtTime(wt)+" window was full, so I looked wider)." : "."));
+      if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
+      return;
     }
     clearForm(); save(); render();
     if (document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
@@ -1247,7 +1312,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
 
   function addToPool() {
-    if (editId) { toast("Finish editing first — press Save changes or Esc.", true); return; }
     const title = $("taskTitle").value.trim();
     if (!title) { toast("Type the to-do first.", true); return; }
     const duration = readDur();
@@ -1536,7 +1600,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     const todayKey = dateKey(new Date());
     if (dateKey(addDays(startOfWeek(parseDate(currentDate)), 6)) < todayKey) { toast("You're looking at a past week — go to this week first.", true); return; }
     const rank = i => (i.important?1:0) + (i.priority==="high"?1:0);
-    const sorted = weekPool.slice().sort((a,b)=>rank(b)-rank(a));
+    const sorted = weekPool.slice().sort((a,b)=> (rank(b)-rank(a)) || (b.duration-a.duration));
     const placedIds = new Set();
     let failed = 0;
     for (const t of sorted) {
@@ -1544,7 +1608,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         const key = dateKey(addDays(startOfWeek(parseDate(currentDate)), d));
         if (key < todayKey) continue;
         const [pf, pt] = itemWindow(t);
-        const slot = findFreeSlot(itemsFor(key), t.duration, Math.max(pf, slotFloor(key)), pt);
+        const slot = findFreeSlot(itemsFor(key), t.duration, Math.max(pf, slotFloor(key)), pt)
+          || findFreeSlot(itemsFor(key), t.duration, Math.max(pf, slotFloor(key)), DAY_END);
         if (slot != null) {
           itemsFor(key).push({ id:t.id, title:t.title, duration:t.duration, time:slot,
             kind:"task", done:false, important:t.important, priority:t.priority, parent:null, slotFrom:pf, slotTo:pt, mine:t.mine === true });
@@ -1580,7 +1645,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("habitTime").style.display         = (isHabit && $("habitTimeMode").value === "fixed") ? "" : "none";
     $("fixedTimeRow").style.display      = isDue || isHabit ? "none" : "";
     $("addDayRow").style.display         = isDue || isHabit ? "none" : "";
-    $("repeatRow").style.display         = (isHabit || editId) ? "none" : "";
+    $("repeatRow").style.display         = isHabit ? "none" : "";
     $("advBtn").style.display = entryType === "task" ? "" : "none";
     $("addBtn").textContent =
       isEvent ? "Add event" : isDue ? "Set deadline" : isHabit ? "Add habit" : "Add to my day";
@@ -1713,98 +1778,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     toast(rows.length + " steps added" + (unscheduled ? " — " + unscheduled + " didn't fit today. Press Rearrange the day or give them shorter times." : " and fitted into your free gaps."), unscheduled > 0);
   }
 
-  /* ================= EDITING ================= */
-  function openEdit(item, key) {
-    const k = key || currentDate;
-    editId = item.id; editKey = k;
-    if (item.kind === "event") setEntryType("event");
-    else if (isDeadline(item)) setEntryType("deadline");
-    else setEntryType("task");
-    $("taskTitle").value = item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0] === item.title ? item.title : item.title;
-    $("taskTitle").value = item.title;
-    $("taskDetails").value = item.details || "";
-    $("durHours").value = Math.floor(item.duration / 60);
-    $("durMinutes").value = item.duration % 60;
-    $("taskTime").value = item.time != null ? fmtTime(item.time) : "";
-    $("addDay").value = k;
-    if (isDeadline(item)) { $("deadlineDate").value = item.dueDate; $("deadlineTime").value = fmtTime(item.dueTime); }
-    if (item.kind === "event" && item.eventType) {
-      $("eventType").value = item.eventType;
-      $("eventCustomLabel").style.display = item.eventType === "custom" ? "" : "none";
-      $("eventCustomLabel").value = item.customLabel || "";
-    }
-    if (item.important) { /* star shown in list */ }
-    $("addBtn").textContent = "Save changes";
-    if (document.body.classList.contains("mobile-tab-list")) setMobileTabSafe("add");
-    $("taskTitle").focus();
-  }
-
-  function saveEdit() {
-    if (editGroupId) planStepsFor(editGroupId).forEach(s => cancelItemNotifs(s.item.id, s.key));
-    else if (editId) cancelItemNotifs(editId, editKey);
-    const list = state[editKey] || [];
-    const item = list.find(x => x.id === editId);
-    if (!item) { cancelEdit(); return; }
-    const title = $("taskTitle").value.trim();
-    if (!title) { toast("Give it a name first.", true); return; }
-    const duration = readDur();
-    const details = $("taskDetails").value.trim();
-    item.title = title; item.details = details; item.duration = duration;
-
-    if (isDeadline(item)) {
-      const date = $("deadlineDate").value, timeStr = $("deadlineTime").value;
-      if (!date || !timeStr) { toast("Pick the day and time it's due.", true); return; }
-      item.dueDate = date; item.dueTime = toMin(timeStr);
-      if (editKey !== date) {  // moved to another day
-        state[editKey] = list.filter(x => x.id !== editId);
-        itemsFor(date).push(item);
-      }
-    } else {
-      const newDay = $("addDay").value || editKey;
-      if (newDay !== editKey && !isPastDay(newDay)) {
-        state[editKey] = (state[editKey] || []).filter(x => x.id !== item.id);
-        editKey = newDay;
-        itemsFor(newDay).push(item);
-      }
-      const t = $("taskTime").value;
-      if (t) {
-        const start = toMin(t);
-        if (overlaps(state[editKey], start, start + duration, item.id)) { toast("That time is already taken by something else.", true); return; }
-        item.time = start;
-        if (item.kind === "task") { item.kind = "appt"; delete item.slotFrom; delete item.slotTo; }
-      } else {
-        item.time = null;
-        if (item.kind === "appt") item.kind = "task";
-        const [wf, wt] = currentWindowChoice();
-        item.slotFrom = wf; item.slotTo = wt;
-      }
-      if (item.kind === "event") { item.eventType = $("eventType").value; item.customLabel = $("eventCustomLabel").value.trim(); }
-    }
-
-    // Group edit: apply title/details/window to every step of a split task.
-    if (editGroupId) {
-      const groupId = editGroupId;
-      Object.keys(state).forEach(k => (state[k]||[]).forEach(x => {
-        if (x.parent !== groupId) return;
-        x.title = title; x.details = details; x.duration = duration;
-        if (item.slotFrom != null) { x.slotFrom = item.slotFrom; x.slotTo = item.slotTo; }
-      }));
-      editGroupId = null;
-    }
-
-    cancelEdit(); save(); render();
-    toast("Changes saved.");
-  }
-
-  function cancelEdit() {
-    const wasEditing = editId != null || editGroupId != null;
-    editId = null; editKey = null; editGroupId = null;
-    clearForm();
-    applyEntryType();
-    if (wasEditing && document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
-  }
-
-  /* Step-group popups (simplified, no floating bubble) */
+  /* ================= EDITING (one full dialog, everywhere) ================= */
+  let editCtx = null;
+  /* Action popups (letterbox list of options) */
   function chooseAction(title, options) {
     return new Promise(resolve => {
       const bd = $("choiceBackdrop");
@@ -1812,91 +1788,235 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       const wrap = $("choiceOpts");
       wrap.innerHTML = "";
       options.forEach(o => {
-        const b = document.createElement("button");
-        b.innerHTML = "<span>" + esc(o.label) + "</span>" +
+        const btn = document.createElement("button");
+        btn.innerHTML = "<span>" + esc(o.label) + "</span>" +
           (o.sub ? '<span class="sub">' + esc(o.sub) + "</span>" : "");
-        b.onclick = () => { bd.classList.remove("open"); resolve(o.value); };
-        wrap.appendChild(b);
+        btn.onclick = () => { bd.classList.remove("open"); resolve(o.value); };
+        wrap.appendChild(btn);
       });
       bd.onclick = e => { if (e.target === bd) { bd.classList.remove("open"); resolve(null); } };
       bd.classList.add("open");
     });
   }
-  function siblingCount(item) {
-    return Object.keys(state).reduce((n, k) =>
-      n + (state[k]||[]).filter(x => x.parent === item.parent).length, 0);
-  }
   async function confirmSeriesDelete(item, key) {
-    const sibs = item.parent ? siblingCount(item) : 0;
+    const base = item.parent || item.id;
+    const sibs = Object.keys(state).reduce((n, k) =>
+      n + (state[k]||[]).filter(x => x.id === base || x.parent === base).length, 0);
     if (sibs < 2) { removeSingle(key, item.id, item.title); return; }
-    const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0], 34);
-    const choice = await chooseAction('Delete: "' + name + '"', [
-      { label: "Delete just this step", sub: "the other " + (sibs - 1) + " step(s) stay in your plan", value: "one" },
-      { label: "Delete the whole task", sub: "all " + sibs + " steps, on every day", value: "all" },
+    const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, ""), 34);
+    const isSplit = Object.keys(state).some(kk => (state[kk]||[]).some(x => x.parent === base && x.stepText));
+    const choice = await chooseAction('Delete: "' + name + '"? "' + shortTitle(item.title, 30) + '"', [
+      { label: isSplit ? "Delete just this step" : "Delete just this one", sub: isSplit ? "the other " + (sibs - 1) + " step(s) stay in your plan" : "the other " + (sibs - 1) + " in the series stay", value: "one" },
+      { label: "Delete the whole " + (isSplit ? "task" : "series"), sub: "all " + sibs + " of them, on every day", value: "all" },
       { label: "Never mind", sub: "keep everything as it is", value: "cancel" },
     ]);
     if (choice === "one") removeSingle(key, item.id, item.title);
-    else if (choice === "all") removeWholeGroup(item.parent);
-  }
-  async function confirmSeriesEdit(item, key) {
-    const sibs = item.parent ? siblingCount(item) : 0;
-    if (sibs < 2) { openEdit(item, key); return; }
-    const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, "").split(": ")[0], 34);
-    const choice = await chooseAction('"' + name + '" is split into ' + sibs + ' steps', [
-      { label: "Edit just this step", sub: "only this one changes", value: "one" },
-      { label: "Edit the whole task", sub: "changes all " + sibs + " steps", value: "all" },
-      { label: "Never mind", sub: "close this window", value: "cancel" },
-    ]);
-    if (choice === "one") openEdit(item, key);
-    else if (choice === "all") openGroupEdit(item.parent, key);
-  }
-  function openGroupEdit(groupId, key) {
-    const found = planStepsFor(groupId)[0];
-    if (!found) { toast("Couldn't find the other steps.", true); return; }
-    editGroupId = groupId;
-    openEdit(found.item, key || found.key);
+    else if (choice === "all") removeWholeGroup(base);
   }
 
-  /* ================= QUICK EDIT POPUP (calendar) ================= */
-  let calEditCtx = null;
-  function openCalEdit(item, key) {
-    calEditCtx = { id: item.id, key };
-    $("calEditTitle").textContent = "Edit: " + shortTitle(item.title, 26);
-    $("calEditName").value = item.title.replace(/^\[\d+\/\d+\]\s*/, "");
-    $("calEditTime").value = item.time != null ? fmtTime(item.time) : "";
-    $("calEditDur").value = item.duration;
-    $("calEditBackdrop").classList.add("open");
+  /* ---- Full edit: every field of the original setup, plus delete ---- */
+  const seriesBaseId = i => i.parent || i.id;
+  function seriesCount(i) {
+    const base = seriesBaseId(i);
+    return Object.keys(state).reduce((n, k) =>
+      n + (state[k]||[]).filter(x => x.id === base || x.parent === base).length, 0);
   }
-  function closeCalEdit() { $("calEditBackdrop").classList.remove("open"); calEditCtx = null; }
-  $("calEditClose").onclick = closeCalEdit;
-  $("calEditSave").onclick = () => {
-    if (!calEditCtx) return;
-    const item = (state[calEditCtx.key] || []).find(x => x.id === calEditCtx.id);
-    if (!item) { closeCalEdit(); return; }
-    const title = $("calEditName").value.trim();
-    if (!title) { toast("Give it a name first.", true); return; }
-    item.title = title;
-    item.duration = Math.max(5, parseInt($("calEditDur").value, 10) || item.duration);
-    const t = $("calEditTime").value;
-    if (t) {
-      item.time = toMin(t);
-      if (overlaps(state[calEditCtx.key], item.time, item.time + item.duration, item.id)) { toast("That time is already taken by something else.", true); return; }
-      if (item.kind === "task") { item.kind = "appt"; delete item.slotFrom; delete item.slotTo; }
-    } else if (item.time != null) {
-      item.time = null;
-      if (item.kind === "appt") item.kind = "task";
+  function isSplitGroup(i) {
+    const base = seriesBaseId(i);
+    return Object.keys(state).some(k => (state[k]||[]).some(x => x.parent === base && x.stepText));
+  }
+  function winNameFor(f, t) {
+    if (f === 540 && t === 1020) return "workday";
+    if (f === 360 && t === 720) return "morning";
+    if (f === 720 && t === 1080) return "afternoon";
+    if (f === 1020 && t === 1380) return "evening";
+    if (f === 1200 && t === 1440) return "night";
+    return "custom";
+  }
+  function editWindowChoice() {
+    const v = $("editWindow").value;
+    if (v === "workday")  return [540, 1020];
+    if (v === "morning")   return [360, 720];
+    if (v === "afternoon") return [720, 1080];
+    if (v === "evening")   return [1020, 1380];
+    if (v === "night")     return [1200, 1440];
+    if (v === "custom") {
+      const f = $("editWinFrom").value, t = $("editWinTo").value;
+      if (f && t && toMin(t) > toMin(f)) return [toMin(f), toMin(t)];
     }
-    closeCalEdit();
-    save(); render();
-    toast("Changes saved.");
+    return itemWindow(null);
+  }
+  function fillEdit(item, key, scope) {
+    editCtx = { id:item.id, key, scope };
+    const isDl = isDeadline(item), isEv = item.kind === "event", isHb = item.kind === "habit";
+    $("editTitle").textContent = "Edit" + (scope === "all" ? " \u2014 whole series" : "");
+    $("editName").value = item.title.replace(/^\[\d+\/\d+\]\s*/, "");
+    $("editDetails").value = item.details || "";
+    $("editDurH").value = Math.floor((item.duration || 30) / 60);
+    $("editDurM").value = (item.duration || 30) % 60;
+    $("editDay").value = isDl ? item.dueDate : key;
+    $("editTime").value = isDl ? fmtTime(item.dueTime) : (item.time != null ? fmtTime(item.time) : "");
+    $("editWindow").value = (item.slotFrom != null && item.slotTo != null) ? winNameFor(item.slotFrom, item.slotTo) : "default";
+    $("editCustomWinRow").style.display = $("editWindow").value === "custom" ? "" : "none";
+    if ($("editWindow").value === "custom") { $("editWinFrom").value = fmtTime(item.slotFrom); $("editWinTo").value = fmtTime(item.slotTo); }
+    $("editDurM").max = 55;
+    $("editDurationRow").style.display = isDl || isHb ? "none" : "";
+    $("editWinRow").style.display = (isDl || isEv || isHb) ? "none" : "";
+    $("editEventTypeRow").style.display = isEv ? "" : "none";
+    if (isEv) {
+      $("editEventType").value = item.eventType || "";
+      $("editEventCustom").style.display = item.eventType === "custom" ? "" : "none";
+      $("editEventCustom").value = item.customLabel || "";
+    }
+    $("editTimeField").style.display = isHb ? "none" : "";
+    $("editDetailsRow").style.display = isHb ? "none" : "";
+    $("editDayRow").style.display = (scope === "all" || isHb) ? "none" : "";
+    $("editImportant").setAttribute("aria-pressed", item.important ? "true" : "false");
+    $("editSpread").style.display = isDl ? "" : "none";
+    $("editSeriesLbl").textContent = scope === "all" ? "Dates stay as they are \u2014 everything else is applied to the whole series." : "";
+    $("editBackdrop").classList.add("open");
+    setTimeout(() => $("editName").focus(), 50);
+  }
+  function openItemEdit(item, key) {
+    const k = key || currentDate;
+    const n = seriesCount(item);
+    if (n > 1) {
+      const isSplit = isSplitGroup(item);
+      const name = shortTitle(item.title.replace(/^\[\d+\/\d+\]\s*/, ""), 34);
+      const what = isSplit ? ("is split into " + n + " steps") : ("is a repeating series \u2014 " + n + " of them so far");
+      chooseAction('"' + name + '" ' + what, [
+        { label: "Edit just this one", sub: isSplit ? "only this step changes" : "the other days keep the old version", value: "one" },
+        { label: "Edit the whole " + (isSplit ? "task" : "series"), sub: isSplit ? "changes all " + n + " steps" : "every date in the series changes too", value: "all" },
+        { label: "Never mind", sub: "close this window", value: "cancel" },
+      ]).then(c => {
+        if (c === "one") fillEdit(item, k, "one");
+        else if (c === "all") fillEdit(item, k, "all");
+      });
+      return;
+    }
+    fillEdit(item, k, "one");
+  }
+  function closeEditDialog() { $("editBackdrop").classList.remove("open"); editCtx = null; }
+  $("editClose").onclick = closeEditDialog;
+  $("editCancel").onclick = closeEditDialog;
+  $("editBackdrop").onclick = e => { if (e.target === $("editBackdrop")) closeEditDialog(); };
+  $("editWindow").addEventListener("change", () => $("editCustomWinRow").style.display = $("editWindow").value === "custom" ? "" : "none");
+  $("editEventType").addEventListener("change", () => $("editEventCustom").style.display = $("editEventType").value === "custom" ? "" : "none");
+  $("editImportant").onclick = () => {
+    const btn = $("editImportant");
+    btn.setAttribute("aria-pressed", btn.getAttribute("aria-pressed") === "true" ? "false" : "true");
   };
-  $("calEditDel").onclick = () => {
-    if (!calEditCtx) return;
-    const ctx = calEditCtx;
-    $("calEditBackdrop").classList.remove("open"); calEditCtx = null;
+  $("editSpread").onclick = () => {
+    if (!editCtx) return;
+    const it = (state[editCtx.key] || []).find(x => x.id === editCtx.id);
+    closeEditDialog();
+    if (it) openDeadlinePlan(it);
+  };
+  $("editSave").onclick = () => saveEditDialog();
+  $("editDel").onclick = () => {
+    if (!editCtx) return;
+    const ctx = editCtx;
     const it = (state[ctx.key] || []).find(x => x.id === ctx.id);
-    if (it) confirmSeriesDelete(it, ctx.key);
+    closeEditDialog();
+    if (!it) return;
+    if (it.kind === "habit") {
+      const h = habits.find(x => x.id === it.habitId);
+      if (h && confirm('Remove the habit "' + h.title + '" and every day it appears on?')) removeHabit(h.id);
+      return;
+    }
+    confirmSeriesDelete(it, ctx.key);
   };
+  function readEditDur() {
+    const h = parseInt($("editDurH").value,10) || 0;
+    const m = parseInt($("editDurM").value,10) || 0;
+    return Math.min(1440, Math.max(5, h*60 + m));
+  }
+  function saveEditDialog() {
+    if (!editCtx) return;
+    const ctx = editCtx;
+    const item = (state[ctx.key] || []).find(x => x.id === ctx.id);
+    if (!item) { closeEditDialog(); return; }
+    const title = $("editName").value.trim();
+    if (!title) { toast("Give it a name first.", true); return; }
+    const isDl = isDeadline(item), isHb = item.kind === "habit";
+    const details = $("editDetails").value.trim();
+    const important = $("editImportant").getAttribute("aria-pressed") === "true";
+    const touched = [[item.id, ctx.key]];
+    const base = seriesBaseId(item);
+    const sibs = ctx.scope === "all"
+      ? Object.keys(state).flatMap(k => (state[k]||[]).filter(x => x.id === base || x.parent === base).map(x => [x, k]))
+      : [[item, ctx.key]];
+
+    if (isHb) {
+      const h = habits.find(x => x.id === item.habitId);
+      if (h) { h.title = title; saveHabits(); }
+    } else if (isDl) {
+      const dueTime = toMin($("editTime").value || fmtTime(item.dueTime));
+      sibs.forEach(([x, k2]) => {
+        x.title = title; x.details = details; x.important = important; x.dueTime = dueTime; // repeats/dates stay put
+      });
+      if (ctx.scope === "one") {
+        const date = $("editDay").value || item.dueDate;
+        if (date !== item.dueDate) {
+          if (date < dateKey(new Date())) { toast("That day has already passed.", true); return; }
+          state[ctx.key] = (state[ctx.key]||[]).filter(x => x.id !== item.id);
+          item.dueDate = date;
+          itemsFor(date).push(item);
+          touched.push([item.id, date]);
+        }
+      }
+    } else {
+      // Day move (single edit only — a series keeps its dates)
+      let targetKey = ctx.key;
+      if (ctx.scope === "one" && !isHb) {
+        const nd = $("editDay").value || ctx.key;
+        if (nd !== ctx.key) {
+          if (isPastDay(nd)) { toast("That day has already happened \u2014 pick today or later.", true); return; }
+          state[ctx.key] = (state[ctx.key]||[]).filter(x => x.id !== item.id);
+          itemsFor(nd).push(item);
+          targetKey = nd;
+          touched.push([item.id, nd]);
+        }
+      }
+      const isEv = item.kind === "event";
+      const t = $("editTime").value;
+      if (isEv && !t && item.time == null && ctx.scope === "one") {
+        toast("Events need a start time.", true); return;
+      }
+      if (t || (isEv && item.time != null)) {
+        const start = t ? toMin(t) : item.time;
+        if (ctx.scope === "one" && overlaps(itemsFor(targetKey), start, start + readEditDur(), item.id)) {
+          toast("That time is already taken by something else.", true); return;
+        }
+        const dur = readEditDur();
+        sibs.forEach(([x]) => {
+          x.title = title; x.details = details; x.duration = dur; x.important = important;
+          x.time = start;
+          if (isEv) {
+            x.eventType = $("editEventType").value;
+            x.customLabel = $("editEventCustom").value.trim();
+          } else { x.kind = "appt"; delete x.slotFrom; delete x.slotTo; }
+        });
+      } else {
+        // No start time = reallocate: window first, then the whole day.
+        const dur = readEditDur();
+        const [wf, wt] = editWindowChoice();
+        sibs.forEach(([x]) => {
+          x.title = title; x.details = details; x.duration = dur; x.important = important;
+          x.time = null; x.kind = "task"; x.slotFrom = wf; x.slotTo = wt;
+        });
+        if (ctx.scope === "one") {
+          let slot = findFreeSlot(itemsFor(targetKey), dur, Math.max(wf, slotFloor(targetKey)), wt);
+          if (slot == null) slot = findFreeSlot(itemsFor(targetKey), dur, Math.max(DAY_START, wf), DAY_END);
+          if (slot != null) item.time = slot;
+        }
+      }
+    }
+    closeEditDialog();
+    touched.forEach(([id, k2]) => cancelItemNotifs(id, k2));
+    save(); render(); scheduleAllUpcoming();
+    toast(ctx.scope === "all" ? "Changes applied to the whole " + (isSplitGroup(item) ? "task." : "series.") : "Changes saved.");
+  }
 
   /* ================= DRAG TO MOVE (day view) ================= */
   let drag = null;
@@ -1944,7 +2064,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
         save();
       }
     } else if (!drag.moved) {
-      openCalEdit(drag.item, currentDate)
+      openItemEdit(drag.item, currentDate)
     }
     drag = null;
     render();
@@ -1998,7 +2118,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 
   function todoRow(i) {
     const row = document.createElement("div");
-    row.className = "todo-item" + (i.done ? " done" : "");
+    row.className = "todo-item k-" + kindOf(i) + (i.done ? " done" : "");
     const kindName = { task:"To-do", appt:"Fixed time", event:"Event", habit:"Habit", deadline:"Deadline" }[i.kind] || "";
     const when = i.kind === "deadline"
       ? "due " + fmtTime(i.dueTime)
@@ -2034,7 +2154,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       '<div class="title">' + esc(shortTitle(i.title, 64)) + '</div>' +
       '<div class="meta">' + kindName + " · " + when + '</div>' +
       (i.parent ? '<div class="meta">1 step of a split task</div>' : '');
-    main.onclick = () => { openEdit(i, currentDate); };
+    main.onclick = () => { openItemEdit(i, currentDate); };
     main.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); main.onclick(); } };
 
     const del = document.createElement("button");
@@ -2150,7 +2270,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       pin.style.top = ((Math.min(Math.max(d.dueTime, DAY_START), DAY_END - 8) - DAY_START) * PX_DAY) + "px";
       pin.innerHTML = '<b>\u23F0 Due ' + fmtTime(d.dueTime) + "</b> — " + esc(shortTitle(d.title)) +
         '<span class="meta" style="display:block;font-size:15px">tap to spread the work over the days before</span>';
-      pin.onclick = ev => { ev.stopPropagation(); openDeadlinePlan(d); };
+      pin.onclick = ev => { ev.stopPropagation(); openItemEdit(d, currentDate); };
       const del = document.createElement("button");
       del.className = "b-del";
       del.style.position = "absolute"; del.style.top = "6px"; del.style.right = "6px";
@@ -2170,7 +2290,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 
   function dayBlock(i) {
     const b = document.createElement("div");
-    b.className = "block " + ({ task:"b-task", appt:"b-evt", event:"b-evt", habit:"b-hab" }[i.kind] || "b-task") + (i.done ? " b-done" : "");
+    b.className = blockCls(i);
     b.dataset.id = i.id;
     b.style.top = ((i.time - DAY_START) * PX_DAY) + "px";
     b.style.height = Math.max(28, i.duration * PX_DAY - 4) + "px";
@@ -2233,13 +2353,24 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       inner.style.height = ((DAY_END - DAY_START) * PX_WEEK) + "px";
       itemsFor(key).filter(i => i.time != null && !isDeadline(i)).forEach(i => {
         const b = document.createElement("div");
-        b.className = "block " + ({ task:"b-task", appt:"b-evt", event:"b-evt", habit:"b-hab" }[i.kind] || "b-task") + (i.done ? " b-done" : "");
+        b.className = blockCls(i);
         b.style.top = ((i.time - DAY_START) * PX_WEEK) + "px";
         b.style.height = Math.max(22, i.duration * PX_WEEK - 3) + "px";
         b.innerHTML = '<div class="b-title">' + esc(shortTitle(i.title, 20)) + '</div>';
         b.title = fmtTime(i.time) + " \u2013 " + fmtTime(i.time + i.duration) + " \u2014 " + i.title;
-        b.onclick = ev => { ev.stopPropagation(); openCalEdit(i, key); };
+        b.onclick = ev => { ev.stopPropagation(); openItemEdit(i, key); };
         inner.appendChild(b);
+      });
+      itemsFor(key).filter(isDeadline).sort((a,b)=>a.dueTime-b.dueTime).forEach(d => {
+        const pin = document.createElement("button");
+        pin.className = "block b-dl";
+        pin.style.top = ((Math.min(Math.max(d.dueTime, DAY_START), DAY_END - 30) - DAY_START) * PX_WEEK) + "px";
+        pin.style.height = "30px";
+        pin.style.left = "4px"; pin.style.right = "4px";
+        pin.innerHTML = '<div class="b-title">\u23F0 ' + fmtTime(d.dueTime) + " " + esc(shortTitle(d.title, 16)) + "</div>";
+        pin.title = "Deadline due " + fmtDay(d.dueDate) + " " + fmtTime(d.dueTime) + " \u2014 tap to edit or spread the work";
+        pin.onclick = ev => { ev.stopPropagation(); openItemEdit(d, key); };
+        inner.appendChild(pin);
       });
       col.appendChild(inner);
       col.onclick = () => { currentDate = key; view = "day"; setViewButtons(); render(); };
@@ -2252,7 +2383,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     scroller.scrollLeft = idx * (colW + 1);
   }
 
-  /* ================= RENDER: MONTH ================= */  /* ================= RENDER: MONTH ================= */
+  /* ================= RENDER: MONTH ================= */
   function renderMonth(head, outer) {
     head.innerHTML = "";
     head.style.display = "";
@@ -2299,14 +2430,14 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       timed.forEach(i => {
         if (shown >= MAX) return;
         const chip = document.createElement("div");
-        chip.className = "m-chip " + ({ task:"c-task", appt:"c-evt", event:"c-evt", habit:"c-hab" }[i.kind] || "c-task") + (i.done ? " b-done" : "");
+        chip.className = "m-chip " + ({ task:"c-task", appt:"c-task", event:"c-evt", habit:"c-hab" }[i.kind] || "c-task") + (i.done ? " b-done" : "");
         chip.textContent = (i.kind === "habit" ? "\u21BB " : fmtTime(i.time) + " ") + shortTitle(i.title, 30);
         if (i.kind === "habit") {
           chip.title = "Habit — tap to tick off";
           chip.onclick = ev => { ev.stopPropagation(); toggleHabit(i.habitId, key); };
         } else {
           chip.title = fmtTime(i.time) + " — tap to edit";
-          chip.onclick = ev => { ev.stopPropagation(); openCalEdit(i, key); };
+          chip.onclick = ev => { ev.stopPropagation(); openItemEdit(i, key); };
         }
         cell.appendChild(chip);
         shown++;
@@ -2489,8 +2620,9 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       $("choiceBackdrop").classList.remove("open");
       $("guideBackdrop").classList.remove("open");
       $("toolsBackdrop").classList.remove("open");
-      $("calEditBackdrop").classList.remove("open");
-      if (editId) cancelEdit();
+      $("editBackdrop").classList.remove("open"); editCtx = null;
+      try { flushNote(); } catch (err) {}
+      showSheet(null);
       return;
     }
     const t = e.target;
