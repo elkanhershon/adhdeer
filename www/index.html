@@ -209,6 +209,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 .todo-item.k-event{box-shadow:inset 5px 0 0 var(--evt-edge)}
 .todo-item.k-deadline{box-shadow:inset 5px 0 0 var(--dl-edge)}
 .todo-item.k-habit{box-shadow:inset 5px 0 0 var(--hab-edge)}
+.m-chip.b-done{text-decoration:line-through;opacity:.55}
 .todo-item .main{flex:1;min-width:0;cursor:pointer}
 .todo-item .title{font-weight:700;overflow-wrap:anywhere}
 .todo-item .meta{color:var(--soft);font-size:15px;overflow-wrap:anywhere}
@@ -841,7 +842,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 </select>
       <input type="text" id="editEventCustom" placeholder="Give it a name" style="display:none">
     </div>
-    <div class="field"><label for="editDetails">Notes <span class="opt">(optional)</span></label><textarea id="editDetails" rows="2"></textarea></div>
+    <div class="field" id="editDetailsRow"><label for="editDetails">Notes <span class="opt">(optional)</span></label><textarea id="editDetails" rows="2"></textarea></div>
     <div class="row" style="align-items:center">
       <button type="button" class="nt-btn" id="editImportant" aria-pressed="false" style="flex:0 0 auto">&#9733; Important</button>
       <button type="button" class="nt-btn" id="editSpread" style="display:none;flex:0 0 auto">&#9000; Spread the work</button>
@@ -1055,7 +1056,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   let entryType = (["task","event","deadline","habit"].indexOf(localStorage.getItem("plannerEntryType")) !== -1)
     ? localStorage.getItem("plannerEntryType") : "task";
   let modalCtx = null;                      // breakdown / deadline-planning dialog state
-  let editId = null, editKey = null, editGroupId = null;   // edit-in-form state (used by later chunks)
+/* (old edit-in-form state removed — editing now lives in one dialog) */
   let advanced = false;
 
   function dateKey(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -1311,7 +1312,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
   }
 
   function addToPool() {
-    if (editId) { toast("Finish editing first — press Save changes or Esc.", true); return; }
     const title = $("taskTitle").value.trim();
     if (!title) { toast("Type the to-do first.", true); return; }
     const duration = readDur();
@@ -1645,7 +1645,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
     $("habitTime").style.display         = (isHabit && $("habitTimeMode").value === "fixed") ? "" : "none";
     $("fixedTimeRow").style.display      = isDue || isHabit ? "none" : "";
     $("addDayRow").style.display         = isDue || isHabit ? "none" : "";
-    $("repeatRow").style.display         = (isHabit || editId) ? "none" : "";
+    $("repeatRow").style.display         = isHabit ? "none" : "";
     $("advBtn").style.display = entryType === "task" ? "" : "none";
     $("addBtn").textContent =
       isEvent ? "Add event" : isDue ? "Set deadline" : isHabit ? "Add habit" : "Add to my day";
@@ -1780,14 +1780,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
 
   /* ================= EDITING (one full dialog, everywhere) ================= */
   let editCtx = null;
-  function cancelEdit() {
-    const wasEditing = editId != null || editGroupId != null;
-    editId = null; editKey = null; editGroupId = null;
-    clearForm();
-    applyEntryType();
-    if (wasEditing && document.body.classList.contains("mobile-tab-add")) setMobileTabSafe("list");
-  }
-  /* Step-group popups (simplified, no floating bubble) */
+  /* Action popups (letterbox list of options) */
   function chooseAction(title, options) {
     return new Promise(resolve => {
       const bd = $("choiceBackdrop");
@@ -1804,10 +1797,6 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       bd.onclick = e => { if (e.target === bd) { bd.classList.remove("open"); resolve(null); } };
       bd.classList.add("open");
     });
-  }
-  function siblingCount(item) {
-    return Object.keys(state).reduce((n, k) =>
-      n + (state[k]||[]).filter(x => x.parent === item.parent).length, 0);
   }
   async function confirmSeriesDelete(item, key) {
     const base = item.parent || item.id;
@@ -1880,6 +1869,7 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       $("editEventCustom").value = item.customLabel || "";
     }
     $("editTimeField").style.display = isHb ? "none" : "";
+    $("editDetailsRow").style.display = isHb ? "none" : "";
     $("editDayRow").style.display = (scope === "all" || isHb) ? "none" : "";
     $("editImportant").setAttribute("aria-pressed", item.important ? "true" : "false");
     $("editSpread").style.display = isDl ? "" : "none";
@@ -2631,7 +2621,8 @@ details.help ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:col
       $("guideBackdrop").classList.remove("open");
       $("toolsBackdrop").classList.remove("open");
       $("editBackdrop").classList.remove("open"); editCtx = null;
-      if (editId) cancelEdit();
+      try { flushNote(); } catch (err) {}
+      showSheet(null);
       return;
     }
     const t = e.target;
